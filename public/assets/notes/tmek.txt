@@ -1,0 +1,9 @@
+This is Atari's T-Mek. It's an interesting thin font that fills the grid with most characters, and has no decoration.
+
+<br><br>
+
+Bizarrely, the lower case letters have a higher base than the upper case, making the result very difficult to read.
+
+<br><br>
+
+That lower case x tho.

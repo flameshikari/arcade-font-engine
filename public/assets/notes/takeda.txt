@@ -1,0 +1,9 @@
+This is a very interesting font, not for the letter forms themselves, but the really excellent shadow. It features a horizontal gradient which is very unusual, but is also two lines deep at the top of the letters, and one line at the bottom.
+
+<br><br>
+
+It seems to be a reasonably successful attempt to make the letters appear 3D, but why they'd do this for a historic fighting game like this I cannot imagine.
+
+<br><br>
+
+It also features a set of <i>italic numbers</i> which is very weird. Since there's no lower case set I put the numbers there for the second colour variant, along with some of the other data in the game. Enjoy. =)

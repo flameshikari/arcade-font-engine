@@ -1,0 +1,7 @@
+This is a gorgeous font, absolutely one of the very best. It's made even more impressive by its size - a full outline and only seven vertical pixels used. And I looove the colours! Still, the ones above cannot compare to the actual game where, using rapid palette switching, the fonts appear to shimmer with a faux-interlace effect. Like so:
+
+<br><br>
+<center><img src="/assets/img/notes/rayf.gif"/></center>
+<br><br>
+
+This one's vibrating at 1/50th of a second per frame, which isn't far off what the actual game does (1/60). It looks way, way better on a CRT at native speed. I love the effect.

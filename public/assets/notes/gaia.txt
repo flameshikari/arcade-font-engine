@@ -1,0 +1,1 @@
+This one's a good looking font, but the drop shadow on most letters is missing from the left-most side. This makes the letters look really strange when they're not adjacent to each other.

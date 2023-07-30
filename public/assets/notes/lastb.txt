@@ -1,0 +1,1 @@
+This font is quite restrained, with each letter being much narrower than it needs to be. Very few characters take the full eight horizontal pixesl they're allowed.

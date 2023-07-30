@@ -1,0 +1,1 @@
+This font is almost too fancy for a single colour, the curves seem to demand some anti-aliasing, or at least a drop-shadow. Sega did upgrade the font when they released <img src="/api.php/y-shda/z-3/x-Shadow%20Dancer/.png">, but for some applications this plain-coloured font is more readable, especially at smaller resolutions.

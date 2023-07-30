@@ -1,0 +1,5 @@
+This curious font reminds me of <strike>the inter...</strike> a series of tubes. Just about every segment (at least in the upper case letters) has a shadow, giving it a 3D tubular look. Sadly it doesn't carry through to every character, and some - especially the lower case - just look unfinished.
+
+<br><br>
+
+In a very strange move, they raised the lower case letters up one line to allow letters with a descender (g, j, q etc) to actually drop lower than other letters. Unfortunately, while this works well for lower-case words and phrases, it makes the letters look completely broken when mixed with capital letters.

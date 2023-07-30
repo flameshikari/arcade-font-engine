@@ -1,0 +1,13 @@
+This isn't an arcade font, obviously, but it's a really good looking 8x6 font that looks great in-game.
+
+<br><br>
+
+The game treats the font as a proportionate one, adding a space between letters and reducing the spacing where appropriate (for example, the capital I).
+
+<br><br>
+
+In addition, in many places, the game creates a shadow which looks excellent, probably by simply slamming down two layers of text with a 1 pixel offset.
+
+<br><br>
+
+<center><img src="/assets/img/notes/mgs.png"></center>

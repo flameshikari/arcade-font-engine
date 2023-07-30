@@ -1,0 +1,1 @@
+This one is kind of unusual. It has three colours, and depending on the palette used, can appear to be either pseudo-3D, or with a secondary drop shadow, or with some fairly effective but rudimentary anti-aliasing.

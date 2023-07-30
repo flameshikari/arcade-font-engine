@@ -1,0 +1,5 @@
+This is the same font as the first Robocop, with a nice new gradient and reduced emphasis on the anti-aliasing. Instead, letters are cut and appear more rounded, especially the lower case characters. The upper case letters aren't as uniformaly square-shaped as in the first game.
+
+<br><br>
+
+But what is with the extra pixel on the upper case J?

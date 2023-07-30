@@ -1,0 +1,5 @@
+This font is fairly interesting: if you look closely, the same gradient pattern is used in every letter, a diagonal dark-to-light with most of the top-left corner being the lightest colour. In the sprite data I found an 8x8 tile that is the <i>fill pattern</i> for this font. It could have been used as a fill, or guide, or even an overlay, filling any space with the gradient pattern used for these fonts.
+
+<br><br><center><img src="/assets/img/notes/ddp.png"></center><br>
+
+This sort of fill is not as common as you might think. Many fonts use a pattern that's customized, to some extent, to each letter. Seibu's <i>Raiden Fighters</i>, for example, with its highlight always at the brightest point for every letter, no matter where it is.

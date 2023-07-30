@@ -1,0 +1,1 @@
+This one's hard to love. It seems like a prototype version of UPL's other great 3D fat-font from Ark Area, but it has some unique features of its own. It uses its three colours very well, to present a thin font with a deep 3D appearance, and looks great at large sizes. Sadly though it looks quite pathetic when rendered at 1x or 2x size.

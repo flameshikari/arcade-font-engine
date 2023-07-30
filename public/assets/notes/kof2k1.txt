@@ -1,0 +1,5 @@
+This is an excellent font, and quite unusual in its excellent use of a very small space. It is, in effect, a 6x5 font. It uses all eight pixels horizontally, two for the surrounding outline, but only seven pixels vertically, preserving an empty pixel for a gap between lines of text.
+
+<br><br>
+
+Small fonts are rare, and even more rarely done this well.

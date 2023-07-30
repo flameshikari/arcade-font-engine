@@ -1,0 +1,13 @@
+At some point you have to wonder if a developer is just showing off. Outfoxies by Namco is one such point. There are no fewer than seven distinct 8x8 fonts here, including:
+
+<br><br>
+<img src="/api.php/y-outf/z-0/x-0%20-%20Tiny%207x7"/><br>
+<img src="/api.php/y-outf/z-1/x-1%20-%20Computer"/><br>
+<img src="/api.php/y-outf/z-2/x-2%20-%20Computer%20Scanlines"><br>
+<img src="/api.php/y-outf/z-3/x-3%20-%20Computer%20Outline"/><br>
+<img src="/api.php/y-outf/z-4/x-4%20-%20Serif"/><br>
+<img src="/api.php/y-outf/z-5/x-5%20-%20Serif%20Bold"/><br>
+<img src="/api.php/y-outf/z-6/x-6%20-%20Italics"/>
+<br><br>
+
+I didn't bother adding colour variations, I leave that as an exercise for you, dear user.

@@ -1,0 +1,1 @@
+This is a simple and competent little font, with a weird, coarse gradient that always uses white for the brightest parts, no matter the rest of the colours used.
