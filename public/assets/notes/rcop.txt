@@ -1,5 +1,0 @@
-This is a clean little font with a single darker colour for rudimentary anti-aliasing. The lower case letters are a mixed bag overall, but the upper case set is really great in their own context.
-
-<br><br>
-
-Nearly every letter fills the entire 8x8 grid, and where they don't some steps are taken to ensure they do: the upper case J has a shadow that's two pixels thick, and the lower case k is, frankly, weird.

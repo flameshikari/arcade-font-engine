@@ -1,5 +1,0 @@
-Rezon uses an 8x8 font stored in a 16x16 grid, which made its extraction fairly tedious.
-
-<br><br>
-
-There's only one colour variation, but it's a good looking thin font that makes every attempt to fill the space to every edge.

@@ -1,0 +1,269 @@
+@import 'reflex-grid/css/reflex.min.css';
+@import 'jquery-ui-dist/jquery-ui.min.css';
+
+
+@font-face {
+	font-family: 'font';
+	src: url('./fonts/determination.ttf');
+}
+
+@keyframes rainbow {
+	0%, 100% { background-position: 0 0; }
+	50% { background-position: 100% 0; }
+}
+
+@keyframes blinker {
+	50% { opacity: 0; }
+}
+
+@keyframes shake {
+	0% { transform: translate(1px, 1px) rotate(0deg); }
+	10% { transform: translate(-1px, -1px) rotate(-1deg); }
+	20% { transform: translate(-1px, 0px) rotate(1deg); }
+	30% { transform: translate(1px, 1px) rotate(0deg); }
+	40% { transform: translate(1px, -1px) rotate(1deg); }
+	50% { transform: translate(-1px, 1px) rotate(-1deg); }
+	60% { transform: translate(1px, -1px) rotate(0deg); }
+	70% { transform: translate(1px, 1px) rotate(-1deg); }
+	80% { transform: translate(-1px, -1px) rotate(1deg); }
+	90% { transform: translate(1px, 1px) rotate(0deg); }
+	100% { transform: translate(1px, -1px) rotate(-1deg); }
+}
+
+* {
+	font-family: 'font';
+	font-size: 16px;
+	outline: none;
+	text-transform: uppercase;
+	text-decoration: none;
+	user-select: none;
+	word-break: break-word;
+	scrollbar-color: gray transparent;
+	margin: 0;
+    padding: 0;
+}
+
+html {
+	background: black url('../images/background.png');
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: auto;
+	font-size: 100%;
+    display: table;
+	max-width: 900px;
+	color: white;
+}
+
+a {
+	color: #ffff00;
+}
+
+legend {
+	line-height: 0;
+	color: #666;
+	padding-right: 1ch;
+	padding-left: 1ch;
+}
+
+img {
+	all: unset;
+	height: 100% auto;
+	max-width: 100%;
+	vertical-align: middle;
+}
+
+input {
+	all: unset;
+	width: 100%;
+	font-size: 32px;
+}
+
+#content {
+    display: table-cell;
+    text-align: center;
+    vertical-align: middle;
+	max-height: 900px;
+}
+
+#fontsize > a {
+	margin: 0 0.5ch 0 0.5ch;
+}
+
+#styles > img {
+	margin-right: 1.5ch;
+}
+
+#styles > img:last-child {
+	margin-right: 0;
+}
+
+.legend {
+	color: #ff8000;
+}
+
+.rainbow {
+	background: linear-gradient(to right, #f4005f, #98e024 , #fa8419, #58d1eb, #9d65ff);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+	animation: rainbow 6s ease-in-out infinite;
+	background-size: 400% 100%;
+}
+
+.cell {
+	padding: 2ch;
+	margin: 1ch;
+	text-align: left;
+	border: 1px solid #222;
+	background: #00000077;
+	text-align: center;
+	line-height: 1.5;
+	vertical-align: middle;
+	background: repeating-linear-gradient(
+	  45deg,
+	  #00000077,
+	  #00000077 2px,
+	  #11111177 2px,
+	  #11111177 5px
+	);
+}
+
+.blinker:placeholder-shown {
+	animation: blinker 1s step-start infinite;
+}
+
+.shake:hover {
+	cursor: pointer;
+	animation: shake 0.25s;
+	animation-iteration-count: infinite;
+	display: inline-block;
+}
+
+
+/* jquery ui */
+
+.ui-selectmenu-icon.ui-icon {
+	margin-top: 2px;
+}
+
+.cell, .ui-widget.ui-widget-content {
+	border: 1px solid #222;
+}
+
+.ui-menu .ui-menu-item-wrapper {
+	border: 0;
+	padding: 0.25ch 0 0.25ch 1ch;
+	margin: 0;
+}
+
+.ui-widget-content .ui-state-active {
+	background: #0000ff;
+}
+
+.ui-corner-bottom {
+	border-radius: 0;
+}
+
+.ui-button, .ui-button:focus, .ui-button:hover {
+	color: inherit;
+	background: transparent;
+	padding: 0;
+	margin: 0;
+	border: 0;
+}
+
+.ui-widget-content {
+	background-color: #080808;
+	color: white;
+	border: 0;
+}
+
+.ui-selectmenu-menu .ui-menu {
+	max-height: 400px;
+}
+
+.ui-selectmenu-button.ui-button {
+	text-align: center;
+	width: 100%;
+}
+
+.ui-selectmenu-text {
+	display: inherit;
+	margin-right: 0;
+}
+
+.ui-corner-all {
+	border-radius: 0;
+}
+
+
+/* slider */
+
+.ui-slider {
+	margin-left: 8px;
+	margin-right: 8px;
+}
+
+.ui-slider-horizontal {
+	height: 16px;
+}
+
+.ui-slider .ui-state-focus,
+.ui-slider .ui-state-default,
+.ui-slider .ui-state-active,
+.ui-slider .ui-state-hover {
+	border: 0;
+}
+
+.ui-slider-horizontal .ui-slider-handle {
+	margin-left: -8px;
+	height: 16px;
+	width: 16px;
+	top: -1px;
+	border: 1px solid #222;
+}
+
+.ui-slider-handle.ui-state-active {
+	background: #0000ff;
+}
+
+
+/* one row table */
+
+table {
+	width: 100%;
+}
+
+table td {
+	white-space:nowrap;
+	padding-right: 1ch;
+}
+
+table td:first-child {
+	padding: 0;
+}
+
+table td:last-child {
+	padding-right: 0;
+	width: 100%;
+}
+
+
+/* checkbox */
+
+.ui-button.ui-checkboxradio-label,
+.ui-button.ui-checkboxradio-label:hover {
+	all: unset;
+	cursor: pointer;
+}
+
+.ui-checkboxradio-label {
+	color: #ff0000 !important;
+}
+
+.ui-checkboxradio-label.ui-checkboxradio-checked {
+	color: #00ff00 !important;
+}

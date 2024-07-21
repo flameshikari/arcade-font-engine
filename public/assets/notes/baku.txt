@@ -1,5 +1,0 @@
-I almost didn't include this one because, while it looks decent enough in-game, it looks fairly rough up close.
-
-<br><br>
-
-I'd wager that the font was created from a higher res source, downsized via algorithm. What appears to be a small font with a two-colour shadow is actually an automatically-aliased downsampling, resulting in misshapen characters and odd pixel placements.

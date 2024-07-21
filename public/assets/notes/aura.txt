@@ -1,5 +1,0 @@
-Aurail's one of my favourite games, and it's got a great font. It also has a little bit of extra-large font for the copyright notice:
-
-<br><br><center><img src="/api.php/dbl-2/y-aura/z-19/x-ABCDEFGHIJK"></center><br>
-
-It still fits within the 8x8 boundary, but has no outline and takes up an extra pixel or two compared to the regular font.

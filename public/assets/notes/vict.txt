@@ -1,5 +1,0 @@
-This is a fabulous looking font which is a bit strange: it has lots of colours, but a very limited character set with many missing symbols (though a complete alphabet and numbers) and it seems somehow out of place in a space-based Ikari Warriors game.
-
-<br><br>
-
-Also, sadly, it has only one colour.
