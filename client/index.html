@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en" ondragstart="return !1" ondrop="return !1">
+    <head>
+        <title>Arcade Font Engine</title>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <meta name="description" content="UI for NFG's Arcade Font Tool"/>
+        <meta property="og:title" content="Arcade Font Engine"/>
+        <meta property="og:image" content="/og.png"/>
+        <meta property="og:description" content="UI for NFG's Arcade Font Tool"/>
+        <meta name="twitter:title" content="Arcade Font Engine">
+        <meta name="twitter:description" content="UI for NFG's Arcade Font Tool">
+        <meta name="twitter:image" content="/preview.png">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="robots" content="index,follow">
+        <meta name="googlebot" content="index,follow">
+        <meta name="google" content="notranslate">
+        <link href="./favicon.ico" type="image/x-icon"  type="image/png" />
+        <link href="./styles/index.css" rel="stylesheet" />
+    </head>
+    <body>
+        <div id="content">
+            <div class="grid">
+                <div class="col-12 title">
+                    <img class="shake pointer" id="title"/>
+                </div>
+
+                <fieldset class="col-md-4 cell fonts">
+                    <legend>Font <span class="legend" id="font-legend"></span> of <span class="legend" id="font-legend-total"></span>
+                    </legend>
+                    <select id="fonts"></select>
+                </fieldset>
+
+                <fieldset class="col-md-auto cell styles">
+                    <input id="style" type="hidden" value="0"/>
+                    <legend>Style <span class="legend" id="styles-legend"></span> of <span class="legend" id="styles-legend-total"></legend>
+                    <p id="styles"></p>
+                </fieldset>
+
+                <fieldset class="col-12 cell notes">
+                    <legend>Notes <span id="notes-legend"></span></legend>
+                    <p id="notes"></p>
+                </fieldset>
+
+                <fieldset class="col-12 cell glyphs">
+                    <legend>Glyphs <span id="company-legend"></span></legend>
+                    <img id="uppercase">
+                    <br>
+                    <img id="lowercase">
+                    <br>
+                    <img id="symbols">
+                </fieldset>
+
+                <fieldset class="col-sm-4 cell size">
+                    <legend>Size <span class="legend" id="size-legend"></span></legend>
+                    <table class="tableList">
+                        <tr>
+                            <td>&#8203;</td>
+                            <td>
+                                <div class="pointer" id="size"></div>
+                            </td>
+                        </tr>
+                    </table>
+                </fieldset>
+
+                <fieldset class="col-sm-auto cell bubble">
+                    <legend>Bubble <span class="legend" id="bubble-legend"></span></legend>
+                    <table class="tableList">
+                        <tr>
+                            <td>&#8203;</td>
+                            <td>
+                                <label for="bubble">Enable</label>
+                                <input type="checkbox" name="bubble" id="bubble">
+                            </td>
+                            <td>
+                                <label for="bubble-flip">Flip</label>
+                                <input type="checkbox" name="bubble-flip" id="bubble-flip">
+                            </td>
+                            <td>
+                                <div class="pointer" id="bubble-position"></div>
+                            </td>
+                        </tr>
+                    </table>
+                </fieldset>
+
+                <fieldset class="col-12 cell input">
+                    <legend>Input</legend>
+                    <input class="blinker" id="input" placeholder="TYPE HERE!" type="text" name="string">
+                </fieldset>
+
+                <fieldset class="col-12 cell output">
+                    <legend>Output</legend>
+                    <a target="_blank" id="blank">
+                        <img class="shake pointer" id="output">
+                    </a>
+                </fieldset>
+
+                <fieldset class="col-12 cell credits">
+                    <legend>Credits</legend>
+                    <p>
+                        <a target="_blank" class="shake rainbow" href="https://nfgworld.com/arcade-fonts-only-64-pixels/">NFG</a>
+                        <font color="222222">/</font>
+                        <a target="_blank" class="shake" style="color: #ff8000;" href="https://hexed.pw">flameshikari</a>
+                        <font color="222222">/</font>
+                        <a target="_blank" class="shake" style="color: #ffff00;" href="https://github.com/flameshikari/arcade-font-engine">Source</a>
+                    </p>
+                </fieldset>
+
+            </div>
+        </div>
+    </body>
+    <script src="./scripts/index.js"></script>
+</html>

@@ -1,1 +1,0 @@
-As an early CPS2 game, Super Street Fighter 2 had a font that was very much a precursor to later games like Alien vs Predator and Varth. Note the lack of anti-aliasing in the zig-zag letters like V and W, and also the simpler vertical gradient, compared to the combination gradient used in later games.

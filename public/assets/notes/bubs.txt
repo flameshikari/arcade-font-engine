@@ -1,1 +1,0 @@
-This is a cute little bubble font. Strangely Taito made it smaller than the 8 pixels would have allowed, leading to some legibility problems.

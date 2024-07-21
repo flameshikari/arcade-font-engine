@@ -1,1 +1,0 @@
-This is a nicely refined descendant of Namco's standard font, with just enough tweaks to make it different without being hard to read. The gradients in these were included in the game sprites, but were not actually used in the game itself - not for fonts, anyway. So they're sort of but not quite authentic.

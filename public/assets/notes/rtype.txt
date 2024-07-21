@@ -1,5 +1,0 @@
-The problem with the R-Type font is that, outside of the game, the colours don't pulse. Without that sexy liquid colour action it's just an awkward thin font. In action, though, it makes the classic game even classic-er.
-
-<br><br>
-
-<center><img src="/assets/img/notes/rtype.gif"></center>

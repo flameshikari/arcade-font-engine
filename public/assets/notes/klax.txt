@@ -1,5 +1,0 @@
-Atari rarely strayed from the tried-and-true Classic font, but for Klax they went all out with 3-colour anti-aliased characters. It's perhaps unique in its inclusion of <b>bold</b> and <i>italic</i> fonts in addition to the upper and lower case characters. All three faces are included here (Klax and Klax Alternate) though the italic and bold faces are not available in lower case.
-
-<br><br>
-
-Despite its variety, the font is not a total success: The italics are shoddy and uneven, with some characters leaning 2 pixels horizontally, and some leaning three (compare the H and I characters, for example). The italic D is really quite unattractive, though this is less likely a fault of the designer than the 8-pixel limitations.

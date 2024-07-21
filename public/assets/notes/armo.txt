@@ -1,1 +1,0 @@
-Capcom really likes their thin fonts, and one very much like this was used in most of their CPS2 releases. This one is a more modern release, and impressively they managed anti-alias the letters. A very impressive feat in an 8x8 space!
