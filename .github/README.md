@@ -1,4 +1,4 @@
-<img src="./logo.png">
+<img src="./.github/logo.png">
 
 ## ℹ️ Description
 
