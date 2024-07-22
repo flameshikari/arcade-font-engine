@@ -1,4 +1,4 @@
-<img src="./.github/logo.png">
+<img src="./logo.png">
 
 ## ℹ️ Description
 
@@ -18,4 +18,6 @@ services:
     container_name: arcade-font-engine
     ports:
       - 8080:8080
+    volume:
+      ./cache:/var/www/html/cache # persist cache
 ```
