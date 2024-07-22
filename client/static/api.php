@@ -330,7 +330,7 @@ if (empty($string)) { $string = "Arcade Font Engine"; };
 
 if ((!$listfonts) or (!$countfonts)) {
 	$stringhash = hash('xxh3', urlencode($string));
-	$filename = $fontchoice."-".$charcolor."-".$doublesize."-".$stringhash.".png";
+	$filename = $fontchoice."-".$charcolor."-".$doublesize."-".(isset($out["b"]) ? $b.$bp."-" : "").$stringhash.".png";
 	$current = $filepath.$filename;
 	// Check the cache.  If the file exists, spit it out and die:
 	if (file_exists($current)) {
@@ -406,7 +406,8 @@ if ($randomfontcolour) {
 
 //The new image width should equal the # of chars x the width of each.
 
-$newimgwidth = $newimgwidth
+
+$newimgwidth = $listfonts
 	? ($charwidth * $maxfontlength)
 	: ($charwidth * strlen($string));
 
