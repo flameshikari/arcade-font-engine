@@ -5,6 +5,7 @@ import title from '../images/title.png'
 
 const endpoint = '/api.php'
 
+const indexes = Object.values(fonts)
 
 const preset = {
     size: 3,
@@ -84,7 +85,7 @@ const updateTitle = () => {
 const fontSelected = (ui) => {
     const font = ui ? ui.item.value : preset.font
     const total = Object.keys(fonts).length
-    const index = fonts[font].index
+    const index = indexes.indexOf(fonts[font]) + 1
     const style = 0
     $('#style').val(style)
     const styles = fonts[font].styles
@@ -92,7 +93,7 @@ const fontSelected = (ui) => {
     $('#styles-legend').html(style + 1)
     $('#styles-legend-total').html(styles)
     $('#styles').empty()
-    $('#company-legend').html(fonts[font].company ? `by <span class="legend">${fonts[font].company}</span>` : '')
+    $('#dev-legend').html(fonts[font].dev ? `by <span class="legend">${fonts[font].dev}</span>` : '')
     $('#notes-legend').html(fonts[font].notes ? `by <span class="rainbow">NFG</span>` : '')
     $('#notes').html(fonts[font].notes || 'No notes for this font.')
 

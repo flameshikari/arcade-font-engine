@@ -61,7 +61,12 @@ a {
 	color: #ffff00;
 }
 
+br {
+	padding-bottom: 8px;
+}
+
 legend {
+	text-align: left;
 	line-height: 0;
 	color: #666;
 	padding-right: 1ch;
@@ -156,7 +161,7 @@ input {
 
 .ui-menu .ui-menu-item-wrapper {
 	border: 0;
-	padding: 0.25ch 0 0.25ch 1ch;
+	line-height: 1;
 	margin: 0;
 }
 
@@ -183,7 +188,7 @@ input {
 }
 
 .ui-selectmenu-menu .ui-menu {
-	max-height: 400px;
+	max-height: 330px;
 }
 
 .ui-selectmenu-button.ui-button {
