@@ -1,7 +1,18 @@
+import aura from '../images/notes/aura.png';
 import ddp from '../images/notes/ddp.png';
-import mgs from '../images/notes/ddp.png';
+import mgs from '../images/notes/mgs.png';
+import outf0 from '../images/notes/outf-0.png';
+import outf1 from '../images/notes/outf-1.png';
+import outf2 from '../images/notes/outf-2.png';
+import outf3 from '../images/notes/outf-3.png';
+import outf4 from '../images/notes/outf-4.png';
+import outf5 from '../images/notes/outf-5.png';
+import outf6 from '../images/notes/outf-6.png';
 import rayf from '../images/notes/rayf.gif';
 import rtype from '../images/notes/rtype.gif';
+import shda from '../images/notes/shda.png';
+import shinobi from '../images/notes/shinobi.png';
+import tp84 from '../images/notes/tp84.png';
 import wfang from '../images/notes/wfang.png';
 
 
@@ -95,7 +106,7 @@ const fonts = {
         name: 'Aurail',
         company: 'Sega',
         styles: 20,
-        notes: `Aurail's one of my favourite games, and it's got a great font. It also has a little bit of extra-large font for the copyright notice:<br><br><center><img src="/api.php/dbl-2/y-aura/z-19/x-ABCDEFGHIJK"></center><br>It still fits within the 8x8 boundary, but has no outline and takes up an extra pixel or two compared to the regular font.`
+        notes: `Aurail's one of my favourite games, and it's got a great font. It also has a little bit of extra-large font for the copyright notice:<br><br><center><img src="${aura}"></center><br>It still fits within the 8x8 boundary, but has no outline and takes up an extra pixel or two compared to the regular font.`
     },
     avng: {
         index: 14,
@@ -725,7 +736,7 @@ const fonts = {
         name: 'Outfoxies',
         company: 'Namco',
         styles: 7,
-        notes: `At some point you have to wonder if a developer is just showing off. Outfoxies by Namco is one such point. There are no fewer than seven distinct 8x8 fonts here, including:<br><br><img src="/api.php/y-outf/z-0/x-0%20-%20Tiny%207x7"/><br><img src="/api.php/y-outf/z-1/x-1%20-%20Computer"/><br><img src="/api.php/y-outf/z-2/x-2%20-%20Computer%20Scanlines"><br><img src="/api.php/y-outf/z-3/x-3%20-%20Computer%20Outline"/><br><img src="/api.php/y-outf/z-4/x-4%20-%20Serif"/><br><img src="/api.php/y-outf/z-5/x-5%20-%20Serif%20Bold"/><br><img src="/api.php/y-outf/z-6/x-6%20-%20Italics"/><br><br>I didn't bother adding colour variations, I leave that as an exercise for you, dear user.`
+        notes: `At some point you have to wonder if a developer is just showing off. Outfoxies by Namco is one such point. There are no fewer than seven distinct 8x8 fonts here, including:<br><br><img src="${outf0}"/><br><img src="${outf1}"/><br><img src="${outf2}"><br><img src="${outf3}"/><br><img src="${outf4}"/><br><img src="${outf5}"/><br><img src="${outf6}"/><br><br>I didn't bother adding colour variations, I leave that as an exercise for you, dear user.`
     },
     pabom: {
         index: 104,
@@ -956,14 +967,14 @@ const fonts = {
         name: 'ShadowDancer',
         company: 'Sega',
         styles: 8,
-        notes: `This is a sequel to Sega's earlier Shinobi. Interestingly the new hardware didn't result in a better font: Shadow Dancer's letters are thicker, have a gradient and a 3D look, but the details are compressed and the result, especially at small sizes, seems smudged. Shinobi's font seems to be a little less attractive, but is much more readable for it. When enlarged however the reverse is true: <img src="/api.php/y-shinobi/x-Shinobi's/.png"> plain pixels are harsh to the eyes.`
+        notes: `This is a sequel to Sega's earlier Shinobi. Interestingly the new hardware didn't result in a better font: Shadow Dancer's letters are thicker, have a gradient and a 3D look, but the details are compressed and the result, especially at small sizes, seems smudged. Shinobi's font seems to be a little less attractive, but is much more readable for it. When enlarged however the reverse is true: <img src="${shda}"> plain pixels are harsh to the eyes.`
     },
     shinobi: {
         index: 137,
         name: 'Shinobi',
         company: 'Sega',
         styles: 4,
-        notes: 'This font is almost too fancy for a single colour, the curves seem to demand some anti-aliasing, or at least a drop-shadow. Sega did upgrade the font when they released <img src="/api.php/y-shda/z-3/x-Shadow%20Dancer/.png">, but for some applications this plain-coloured font is more readable, especially at smaller resolutions.'
+        notes: `This font is almost too fancy for a single colour, the curves seem to demand some anti-aliasing, or at least a drop-shadow. Sega did upgrade the font when they released <img src="${shinobi}">, but for some applications this plain-coloured font is more readable, especially at smaller resolutions.`
     },
     simp: {
         index: 138,
@@ -1103,7 +1114,7 @@ const fonts = {
         name: 'Time Pilot 84',
         company: 'Konami',
         styles: 10,
-        notes: `This is one of the few italic fonts used in arcades. It was a fairly daring decision by Konami, considering the single colour used... Single colour fonts don't generally allow for eye-pleasing diagonal lines, but this font really works for me.<br><br><img src="/api.php/y-tp84/z-0/cs-0.0.0/x-Time%20Pilot%20'84"> is also a bloody great game, BTW.`
+        notes: `This is one of the few italic fonts used in arcades. It was a fairly daring decision by Konami, considering the single colour used... Single colour fonts don't generally allow for eye-pleasing diagonal lines, but this font really works for me.<br><br><img src="${tp84}"> is also a bloody great game, BTW.`
     },
     trs: {
         index: 158,

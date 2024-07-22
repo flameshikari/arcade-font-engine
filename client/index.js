@@ -20,7 +20,7 @@ const babelOpts = {
 
 const esbuildOpts = {
     target: esbuildBrowserlist(),
-    minify: false,
+    minify: true,
     outdir: 'public',
     splitting: true,
     loader: {
