@@ -144,7 +144,7 @@ $stringlimit = 100;
 				// When doing a font list, the spacing between fonts is 1 x fontsize, so 3x font = 3px gap.
 $allowlist = 1;
 
-$doublesize='';
+$doublesize = '';
 
 /* ------------------------------------------------ */
 /*    Set up default values to keep things from     */
@@ -161,167 +161,152 @@ $randomfontcolour = FALSE;
 /*     First, get the vars from the URL request     */
 /* ------------------------------------------------ */
 
-	$stringpure = '';   // Just gettin' it out there.  <_<
+$stringhash = '';   // Just gettin' it out there.  <_<
 
 if ($phpbbfriendly == 1) {
-			// This is the PHPbb-friendly version
-                $scriptname = $_SERVER['SCRIPT_NAME']."/";
-                $filename = str_replace($scriptname, '', $_SERVER['REQUEST_URI']);
-                $filename = urldecode($filename);
-                $bits = explode("/",$filename);
-                $out = array();
-                foreach($bits as $bite) {
-                                $temp = explode("-",$bite, 2);
-                                @$out[$temp[0]] = $temp[1];
-                }
-                                // String to create:
-                if (isset($out["x"])) {
-					$string = $out["x"];
-				} else {
-					$string = "NULL";
-				}
+	// This is the PHPbb-friendly version
+	$scriptname = $_SERVER['SCRIPT_NAME']."/";
+	$filename = str_replace($scriptname, '', $_SERVER['REQUEST_URI']);
+	$filename = urldecode($filename);
+	$bits = explode("/",$filename);
+	$out = array();
+	foreach($bits as $bite) {
+		$temp = explode("-",$bite, 2);
+		@$out[$temp[0]] = $temp[1];
+	}
+	
+	$string = (isset($out["x"])) ? $out["x"] : "NULL";
 
-                                // Get the desired font file:
-				if (isset($out["y"])) {
-					if ($out["y"] == "r") {
-						$randomfont = TRUE;
-					} else {
-						$fontchoice = $out["y"];
-					}
-				} else {
-					$fontchoice = "taitoa";
-				}
-                                // Row offset (font colour in multiple-colour fonts)
-                if (isset($out["z"])) {
-						if ($out["z"] == "r") {
-							$randomfontcolour = TRUE;
-						} else {
-							$randomfontcolour = FALSE;
-							$charcolor = $out["z"];
-						}
-                } else {
-					$charcolor = "0";
-				}
+	// Get the desired font file:
+	if (isset($out["y"])) {
+		if ($out["y"] == "r") {
+			$randomfont = TRUE;
+		} else {
+			$fontchoice = $out["y"];
+		}
+	} else {
+		$fontchoice = "taitoa";
+	}
+	
+	// Row offset (font colour in multiple-colour fonts)
+	if (isset($out["z"])) {
+		if ($out["z"] == "r") {
+			$randomfontcolour = TRUE;
+		} else {
+			$randomfontcolour = FALSE;
+			$charcolor = $out["z"];
+		}
+	} else {
+		$charcolor = "0";
+	}
 
-                                // Check dbl: if set, it becomes the multiplier (up to 6x)
-                if (isset($out["dbl"])) {
-                        $doublesize = $out["dbl"];
-                                // There's no point setting the multiplier to ONE, so if set, change it to TWO
-                        if ( $doublesize <= 1 ) {
-                                $doublesize = 2;
-                        }
-                }
-                                // Check for height/width overrides.
-								//		If H or V parameters exist, change the font size.
-								//		Also, change font directory to $bigdir (defined above)
-                if (isset($out["w"])) {
-                        $charwidth = $out["w"];
-						$dir = $bigdir;
-                }
-                if (isset($out["h"])) {
-                        $charheight = $out["h"];
-						$dir = $bigdir;
-                }
-                if (isset($out["cs"])) {
-                        $colorize = explode(".",$out["cs"]);
-                }
-                if (isset($out["b"])) {
-                	$b = $out['b'];
-                }
-                if (isset($out["bp"])) {
-                	$bp = $out['bp'];
-                } else {
-                	$bp = 0;
-                }
-				if (isset($out["list"])) {
-                        $listfonts = true;
-                } else {
-						$listfonts = false;
-				}
-				if (isset($out["count"])) {
-                        $countfonts = true;
-                } else {
-						$countfonts = false;
-				}
+	// Check dbl: if set, it becomes the multiplier (up to 6x)
+	if (isset($out["dbl"])) {
+		$doublesize = $out["dbl"];
+		// There's no point setting the multiplier to ONE, so if set, change it to TWO
+		if ( $doublesize <= 1 ) {
+			$doublesize = 2;
+		}
+	}
+
+	// Check for height/width overrides.
+	//		If H or V parameters exist, change the font size.
+	//		Also, change font directory to $bigdir (defined above)
+	if (isset($out["w"])) {
+			$charwidth = $out["w"];
+			$dir = $bigdir;
+	}
+	if (isset($out["h"])) {
+			$charheight = $out["h"];
+			$dir = $bigdir;
+	}
+	if (isset($out["cs"])) {
+			$colorize = explode(".",$out["cs"]);
+	}
+	if (isset($out["b"])) {
+		$b = $out['b'];
+	}
+	if (isset($out["bp"])) {
+		$bp = $out['bp'];
+	} else {
+		$bp = 0;
+	}
+	if (isset($out["list"])) {
+			$listfonts = true;
+	} else {
+			$listfonts = false;
+	}
+	if (isset($out["count"])) {
+			$countfonts = true;
+	} else {
+			$countfonts = false;
+	}
 
 } else {
-			// This is the normal version, using standard URL parameters
- 				// String to create:
-                if (isset($_GET["x"])) {
-					$string = $_GET["x"];
-				} else {
-					$string = "NULL";
-				}
-                                // Get the desired font file:
-				if (isset($_GET["y"])) {
-					if ($_GET["y"] == "r") {
-						$randomfont = TRUE;
-					} else {
-						$fontchoice = $_GET["y"];
-					}
-				} else {
-					$fontchoice = "taitoa";
-				}
-                                // Vertical offset (font colour in multiple-colour fonts)
-                if (isset($_GET["z"])) {
-						if ($_GET["z"] == "r") {
-							$randomfontcolour = TRUE;
-						} else {
-							$randomfontcolour = FALSE;
-							$charcolor = $out["z"];
-						}
-				} else {
-					$charcolor = "1";
-				}
-                                // Check dbl: if set, it becomes the multiplier (up to 6x)
-                if (isset($_GET["dbl"])) {
-                        $doublesize = $_GET["dbl"];
-                                        // There's no point setting the multiplier to ONE, so if set, change it to TWO
-                        if ( $doublesize <= 1 ) {
-                                $doublesize = 2;
-                        }
-                }
-                                        // Check for height/width overrides.  If H or V parameters exist, change the font size.
-                if (isset($_GET["w"])) {
-                        $charwidth = $_GET["w"];
-						$dir = $bigdir;
-                }
-                if (isset($_GET["h"])) {
-                        $charheight = $_GET["h"];
-						$dir = $bigdir;
-                }
-                if (isset($_GET["cs"])) {
-                        $colorize = explode(".",$_GET["cs"]);
-                }
-                if (isset($_GET["b"])) {
-               		$b = $_GET['b'];
-                }
-                if (isset($_GET["bp"])) {
-               		$bp = $_GET['bp'];
-                } else {
-	            	$bp = 0;
-	        }
-		if (isset($_GET["list"])) {
-                        $listfonts = true;
-                } else {
-			$listfonts = false;
+	// This is the normal version, using standard URL parameters
+	// String to create:
+
+	$string = (isset($_GET["x"])) ? $_GET["x"] : "NULL";
+
+	// Get the desired font file:
+	if (isset($_GET["y"])) {
+		if ($_GET["y"] == "r") {
+			$randomfont = TRUE;
+		} else {
+			$fontchoice = $_GET["y"];
 		}
-		if (isset($_GET["count"])) {
-                        $countfonts = true;
-                } else {
-			$countfonts = false;
-				}
+	} else {
+		$fontchoice = "taitoa";
+	}
+
+	// Vertical offset (font colour in multiple-colour fonts)
+	if (isset($_GET["z"])) {
+		if ($_GET["z"] == "r") {
+			$randomfontcolour = TRUE;
+		} else {
+			$randomfontcolour = FALSE;
+			$charcolor = $out["z"];
+		}
+	} else {
+		$charcolor = "1";
+	}
+
+	// Check dbl: if set, it becomes the multiplier (up to 6x)
+	if (isset($_GET["dbl"])) {
+		$doublesize = $_GET["dbl"];
+		// There's no point setting the multiplier to ONE, so if set, change it to TWO
+		if ( $doublesize <= 1 ) {
+			$doublesize = 2;
+		}
+	}
+
+	// Check for height/width overrides.  If H or V parameters exist, change the font size.
+	if (isset($_GET["w"])) {
+		$charwidth = $_GET["w"];
+		$dir = $bigdir;
+	}
+
+	if (isset($_GET["h"])) {
+		$charheight = $_GET["h"];
+		$dir = $bigdir;
+	}
+
+	if (isset($_GET["cs"])) $colorize = explode(".",$_GET["cs"]);
+
+    if (isset($_GET["b"])) $b = $_GET['b'];
+	
+	$bp = isset($_GET["bp"]) ? true : 0;
+	
+	$listfonts = (isset($_GET["list"])) ? true : false;
+	
+	$countfonts = (isset($_GET["count"])) ? true : false;
 }
-  if (isset($b) && $b == "none") {
- 	unset($b);
- }
+
+if (isset($b) && $b == "none") unset($b);
 
 
-
-                // We don't need any fonts larger than 6x, do we?
-if ($doublesize > 6) {
-        $doublesize = 6;
-}
+// We don't need any fonts larger than 6x, do we?
+if ($doublesize > 6) $doublesize = 6;
 
 /* ------------------------------------------------ */
 /*         Sanitize the string, for safety!         */
@@ -341,22 +326,21 @@ if (empty($string)) { $string = "Arcade Font Engine"; };
 /* ------------------------------------------------ */
 
 
-				// If the font or colour is RANDOM, don't load from the cache.
-if (($randomfontcolour =  FALSE) and ($randomfont =  FALSE)) {
-				// Create the filename.  Skip the entire cache procedure if we're listing or counting fonts.
 
-	if ((!$listfonts) or (!$countfonts)) {
-		$stringpure = urlencode($string);
-		$current = "./cache/".$fontchoice.$charcolor.$doublesize.$charheight.$charwidth.$stringpure.".png";
-					// Check the cache.  If the file exists, spit it out and die:
-		if (file_exists($current)) {
-			$contentType = 'Content-type: image/png';
-			header ($contentType);
-			readfile($current);
-			die;
-		}
+
+if ((!$listfonts) or (!$countfonts)) {
+	$stringhash = hash('xxh3', urlencode($string));
+	$filename = $fontchoice."-".$charcolor."-".$doublesize."-".$stringhash.".png";
+	$current = $filepath.$filename;
+	// Check the cache.  If the file exists, spit it out and die:
+	if (file_exists($current)) {
+		$contentType = 'Content-type: image/png';
+		header ($contentType);
+		readfile($current);
+		die;
 	}
 }
+//}
 
 /* ------------------------------------------------ */
 /*     This is the new font Detect and Select!      */
@@ -393,43 +377,23 @@ $imgdir = opendir($dir) or die('Tick was here.  Can\'t open IMG dir.');						// 
 closedir($imgdir);
 if ($listfonts) sort($fontfiles[$numfonts]);
 
-/*
-if ($handle = opendir($dir)) {
-       while (false !== ($file = readdir($handle))) {
-               $temp = explode("-",$file,2);
-               if(count($temp) > 1) {						// means it was split up
-					$fontnames[$numfonts] = $file;			// An array of filenames, for later abuse.
-					$maxfontlength = max($maxfontlength, strlen(substr($temp[1],0,-4)));
-					if ($listfonts) { $fontfiles[$numfonts] = $dir.$file; }
-                       if($fontchoice == $temp[0]) {
-							$fontfile = $dir.$file;			// If the current file prefix matches the $fontchoice, specify the SOURCE image
-
-						}
-					$numfonts++;							// increment the font count.  Also used for incrementing $fontnames array.
-					}
-        }
-}
-
-*/
-
-
 /* ------------------------------------------------ */
 /*             Special-case adjustments             */
 /*        For LIST, COUNT and similar things        */
 /* ------------------------------------------------ */
 
-				// Are we counting the fonts?  Change the user requested string/phrase to the number of fonts.
+// Are we counting the fonts?  Change the user requested string/phrase to the number of fonts.
 if ($countfonts) {
-		$string = $numfonts;
+	$string = $numfonts;
 }
 
-				// If we're doing $randomfonts, change the font filename to be a random one:
+// If we're doing $randomfonts, change the font filename to be a random one:
 if (isset($randomfont)) {
 	$fontarraychoice = rand(0,$numfonts);
 	$fontfile = $dir.$fontnames[$fontarraychoice];
 }
 
-				// Is the font colour random?  Check the z-depth and pick one.
+// Is the font colour random?  Check the z-depth and pick one.
 if ($randomfontcolour) {
 	$size = getimagesize($fontfile);
 	$zcount = $size[1] / $charheight;
@@ -440,18 +404,17 @@ if ($randomfontcolour) {
 /*          This is the preparation section         */
 /* ------------------------------------------------ */
 
-                //The new image width should equal the # of chars x the width of each.
-if ($listfonts) {
-	$newimgwidth = ($charwidth * $maxfontlength);
-} else {
-	$newimgwidth = ($charwidth * strlen($string));
-}
-                //The new image height should equal the # of fonts x the height of each char of each.
-if ($listfonts) {
-	$newimgheight = (($charheight * $numfonts) + ($numfonts * 2));             // charheight (8 px default) x number of fonts, plus 2px gap x number of fonts
-} else {
-	$newimgheight = $charheight;
-}
+//The new image width should equal the # of chars x the width of each.
+
+$newimgwidth = $newimgwidth
+	? ($charwidth * $maxfontlength)
+	: ($charwidth * strlen($string));
+
+//The new image height should equal the # of fonts x the height of each char of each.
+
+$newimgheight = $listfonts
+	? (($charheight * $numfonts) + ($numfonts * 2)) // charheight (8 px default) x number of fonts, plus 2px gap x number of fonts
+	: $charheight;
 
 
 /* ------------------------------------------------ */
@@ -459,14 +422,13 @@ if ($listfonts) {
 /* ------------------------------------------------ */
 
 
-                // Create the image (width, height)
-
+// Create the image (width, height)
 $newimg = @imagecreatetruecolor($newimgwidth, $newimgheight) or die ('WE DEAD');
 
-                // Set up the transparent background:
-imagealphablending($newimg,false);
-$col=imagecolorallocatealpha($newimg,44,0,0,127);
-imagefilledrectangle($newimg,0,0,$newimgwidth,$newimgheight,$col);
+// Set up the transparent background:
+imagealphablending($newimg, false);
+$col = imagecolorallocatealpha($newimg, 44, 0, 0, 127);
+imagefilledrectangle($newimg, 0, 0, $newimgwidth, $newimgheight, $col);
 
 /* ------------------------------------------------ */
 /*          Now the character cut/paste loop        */
@@ -485,58 +447,53 @@ $vertloop = 0;						// set vertical loop counter to zero
 sort($fontnames);
 foreach ($fontnames as $currentfont) {
 	if ($listfonts) {
-		$fontbits = explode("-",$currentfont,2);
-		$string = substr($fontbits[1],0,-4);		// If this is a font list, the current string should be the font name
+		$fontbits = explode("-", $currentfont, 2);
+		$string = substr($fontbits[1], 0, -4); // if this is a font list, the current string should be the font name
 		$currentVpos = (($charheight + 2) * $vertloop);
 		$srcimg = imagecreatefrompng($fontfiles[$vertloop]);
 	} else {
-		$srcimg = imagecreatefrompng($fontfile);	// Change to the current fontfile.
+		$srcimg = imagecreatefrompng($fontfile); //cChange to the current fontfile
 		$currentVpos = 0;
 	}
-//					echo $fontfiles[$numfonts];
-					// Set horizontal loop char-counter to zero
-		$charcount = 0;
-					// Start Loop, repeat for each character in the string:
-		foreach(str_split($string) as $char) {
-					// returns ASCII number
-			$ASCIIno = ord($char);
-					// Set NEWIMG current cursor H position
-			$currentHpos = ($charwidth * $charcount);
-					// H-position for grabbing char from SRC image (width x ASCII number + offset)
-			$srcimgcharpos = ($ASCIIno - $charoffset) * $charwidth;
-					// Copy the letter from font image to new image
-			imagecopy($newimg, $srcimg, $currentHpos, $currentVpos, $srcimgcharpos, $charcolor * $charheight, $charwidth, $charheight);
-					// Move to next char in string
-			$charcount++;
-		}
-		$vertloop++;				// Increment the vertical counter
+	// Set horizontal loop char-counter to zero
+	$charcount = 0;
+	// start loop, repeat for each character in the string
+	foreach(str_split($string) as $char) {
+		// returns ASCII number
+		$ASCIIno = ord($char);
+		// Set NEWIMG current cursor H position
+		$currentHpos = ($charwidth * $charcount);
+		// H-position for grabbing char from SRC image (width x ASCII number + offset)
+		$srcimgcharpos = ($ASCIIno - $charoffset) * $charwidth;
+		// copy the letter from font image to new image
+		imagecopy($newimg, $srcimg, $currentHpos, $currentVpos, $srcimgcharpos, $charcolor * $charheight, $charwidth, $charheight);
+		// move to next char in string
+		$charcount++;
+	}
+	$vertloop++; // increment the vertical counter
 }
 
-imagesavealpha($newimg,true);
+imagesavealpha($newimg, true);
 
 /* ------------------------------------------------ */
 /*              Colour Shift If Desired             */
 /* ------------------------------------------------ */
 
- if(isset($colorize)) {
-        imagefilter($newimg, IMG_FILTER_COLORIZE, $colorize[0],$colorize[1],$colorize[2]);
+if (isset($colorize)) {
+	imagefilter($newimg, IMG_FILTER_COLORIZE, $colorize[0], $colorize[1], $colorize[2]);
 }
 
 /* ------------------------------------------------ */
 /*         Two save-routines: big and x size        */
 /* ------------------------------------------------ */
 
-                // Filename is the $string:
-$filename = $fontchoice.$charcolor.$doublesize.$charheight.$charwidth.$stringpure.".png";
+if (isset($b)) {
 
-if(isset($b)) {
 
-	if($b == "d") {
-		// the pointer is down.
-		$dir = "bot";
-	} else {
-		$dir = "top";
-	}
+	$dir = $b == "d"
+		? "bot" // the pointer is down
+		: "top";
+
 	if($bp <= 40) {
 		$s = "l";
 	} elseif($bp >= 60) {
@@ -550,11 +507,8 @@ if(isset($b)) {
 	// now build step 1 - the background
 	$bgt = imagecreatefrompng($bubblepath."bg.png");
 
-
 	$width = imagesx($newimg);
 	$height = imagesy($newimg);
-
-
 
 	$step1 = imagecreatetruecolor($width+4, $height+8);
 	imagesavealpha($step1,true);
@@ -591,44 +545,38 @@ if(isset($b)) {
 	$newimg = $step3;
 
 }
+
 if ($doublesize > 1) {
-                        // Create NewNewImg
- 		$newimgwidth = imagesx($newimg);
- 		$newimgheight = imagesy($newimg);
-        $newnewimg = imagecreatetruecolor($newimgwidth*$doublesize, $newimgheight*$doublesize);
+	// Create NewNewImg
+	$newimgwidth = imagesx($newimg);
+	$newimgheight = imagesy($newimg);
+	$newnewimg = imagecreatetruecolor($newimgwidth*$doublesize, $newimgheight*$doublesize);
 
-                        // Set up the transparent background:
-        imagealphablending($newnewimg,false);
-        $col=imagecolorallocatealpha($newnewimg,44,0,0,127);
-        imagefilledrectangle($newnewimg,0,0,$newimgwidth*$doublesize,$charheight * $doublesize,$col);
+	// Set up the transparent background:
+	imagealphablending($newnewimg,false);
+	$col=imagecolorallocatealpha($newnewimg,44,0,0,127);
+	imagefilledrectangle($newnewimg,0,0,$newimgwidth*$doublesize,$charheight * $doublesize,$col);
 
-                        // Double the size from old image to new image:
-        imagecopyresized($newnewimg, $newimg, 0, 0, 0, 0, $newimgwidth * $doublesize, $newimgheight * $doublesize, $newimgwidth, $newimgheight);
+	// Double the size from old image to new image:
+	imagecopyresized($newnewimg, $newimg, 0, 0, 0, 0, $newimgwidth * $doublesize, $newimgheight * $doublesize, $newimgwidth, $newimgheight);
 
-        // Output and free from memory:
-        header('Content-Type: image/png');
-        imagesavealpha($newnewimg,true);
-                        // If cache is set to yes, save the file:
-        if ($cacheornot == 1) {
-                imagepng($newnewimg, $filepath.$filename);
-        }
-        imagepng($newnewimg);
-        imagedestroy($newimg);
-        imagedestroy($newnewimg);
-        imagedestroy($srcimg);
-
+	// Output and free from memory:
+	header('Content-Type: image/png');
+	imagesavealpha($newnewimg, true);
+	// If cache is set to yes, save the file:
+	if ($cacheornot == 1) imagepng($newnewimg, $filepath.$filename);
+	imagepng($newnewimg);
+	imagedestroy($newimg);
+	imagedestroy($newnewimg);
+	imagedestroy($srcimg);
 } else {
-
-        // Output and free from memory:
-        header('Content-Type: image/png');
-        imagepng($newimg);
-                                // If cache is set to yes, save the file:
-        if ($cacheornot == 1) {
-                imagepng($newimg, $filepath.$filename);
-        }
-        imagedestroy($newimg);
-        imagedestroy($srcimg);
-
-}
+	// output and free from memory:
+	header('Content-Type: image/png');
+	imagepng($newimg);
+	// if cache is set to yes, save the file
+	if ($cacheornot == 1) imagepng($newimg, $filepath.$filename);
+	imagedestroy($newimg);
+	imagedestroy($srcimg);
+};
 
 ?>
