@@ -79,6 +79,7 @@ input {
 	all: unset;
 	width: 100%;
 	font-size: 32px;
+	text-transform: initial;
 }
 
 #content {
