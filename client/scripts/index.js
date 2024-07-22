@@ -18,6 +18,11 @@ const previews = {
     symbols: `0123456789!?@$%^'&*~+=-_.,`,
 }
 
+const sanitizeString = () => {
+    const value = $('#input').val();
+    $('#input').val(value.replace(/[\u{0080}-\u{FFFF}]/gu, ''));
+};
+
 const shake = () => {
     const intensity = 1 + 2 * Math.random();
     const x = intensity * (Math.random() > 0.5 ? -1 : 1);
@@ -28,42 +33,40 @@ const shake = () => {
         document.body.style.marginLeft = '';
         document.body.style.marginTop = '';
     }, 75);
-}
+};
 
-const compileUrl = (input, preview = false) => {
+
+const compileUrl = (options) => {
     let url = endpoint;
-    input = input || $('#input').val() || 'I AM ERROR';
-    const size = $('#size').slider('value');
-    const style = $('#style').val();
-    const font = $('#fonts').val();
-    if (preview) {
-        const enabled = $('#bubble').is(':checked');
-        if (enabled) {
-            const flipped = $('#bubble-flip').is(':checked');
-            const position = $('#bubble-position').slider('value');
-            url += (flipped ? '/b-u' : '/b-d') + '/bp-' + position;
+    const input = options?.input || $('#input').val() || 'I AM ERROR';
+    const size = options?.size || $('#size').slider('value');
+    const style = options?.style || $('#style').val();
+    const font = options?.font || $('#fonts').val();
+    const glyphs = options?.glyphs || false;
+    if (glyphs) {
+        url += '/dbl-3'
+    } else {
+        const bubble = options?.bubble || $('#bubble').is(':checked');
+        if (bubble) {
+            const bubbleFlip = $('#bubble-flip').is(':checked');
+            const bubblePosition = $('#bubble-position').slider('value');
+            url += (bubbleFlip ? '/b-u' : '/b-d') + '/bp-' + bubblePosition;
         };
+        if (size >= 2) url += '/dbl-' + size;
     };
-    if (size >= 2) url += preview ? '/dbl-' + size : '/dbl-3';
     url += '/y-' + font + '/z-' + style + '/x-' + input;
     return url;
 };
 
-
-const sanitizeString = () => {
-    const value = $('#input').val();
-    $('#input').val(value.replace(/[\u{0080}-\u{FFFF}]/gu, ''));
-};
-
-
 const updatePreviews = (glyphs = false) => {
     shake()
     if (glyphs) {
-        $('#uppercase').attr('src',compileUrl(previews.uppercase));
-        $('#lowercase').attr('src',compileUrl(previews.lowercase));
-        $('#symbols').attr('src',compileUrl(previews.symbols));
+        for (const [key, value] of Object.entries(previews)) {
+            const options = { input: value, glyphs: true };
+            $(`#${key}`).attr('src', compileUrl(options))
+        }
     };
-    const url = compileUrl(null, true);
+    const url = compileUrl();
     $('#output').attr('src', url);
     $('#blank').attr('href', url);
 };
@@ -88,10 +91,7 @@ const fontSelected = (ui) => {
 
     $('#styles-legend').html(style + 1)
     $('#styles-legend-total').html(styles)
-
     $('#styles').empty()
-
-    
     $('#company-legend').html(fonts[font].company ? `by <span class="legend">${fonts[font].company}</span>` : '')
     $('#notes-legend').html(fonts[font].notes ? `by <span class="rainbow">NFG</span>` : '')
     $('#notes').html(fonts[font].notes || 'No notes for this font.')
@@ -111,9 +111,9 @@ const fontSelected = (ui) => {
             },
         }));
     };
-    updatePreviews(true);
     $('#font-legend').html(index);
     $('#font-legend-total').html(total);
+    updatePreviews(true);
 }
 
 window.onload = () => {
