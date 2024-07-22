@@ -19,5 +19,5 @@ services:
     ports:
       - 8080:8080
     volume:
-      ./cache:/var/www/html/cache # persist cache
+      - ./cache:/var/www/html/cache # persist cache
 ```
