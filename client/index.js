@@ -32,22 +32,25 @@ const esbuildOpts = {
     bundle: true,
     treeShaking: true,
     write: true,
+    legalComments: 'none',
     assetNames: '[name]',
     chunkNames: 'assets/[name]-[hash]',
 };
 
 const minifyOptions = {
-    collapseBooleanAttributes: true,
-    collapseWhitespace: true,
-    decodeEntities: true,
-    html5: false,
-    minifyURLs: true,
-    removeComments: true,
-    removeAttributeQuotes: true,
+    normalizeAttributeValues: true,
     removeEmptyAttributes: true,
-    removeRedundantAttributes: true,
-    sortClassName: true,
+    collapseAttributeWhitespace: true,
+    removeRedundantAttributes: false,
+    deduplicateAttributeValues: true,
+    minifyUrls: true,
     sortAttributes: true,
+    sortAttributesWithLists: 'alphabetical',
+    collapseWhitespace: 'conservative',
+    removeComments: 'safe',
+    minifyConditionalComments: true,
+    removeOptionalTags: true,
+    removeAttributeQuotes: true,
 };
 
 

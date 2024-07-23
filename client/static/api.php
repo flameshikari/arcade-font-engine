@@ -360,16 +360,14 @@ $imgdir = opendir($dir) or die('Tick was here.  Can\'t open IMG dir.');						// 
   while (false !== ($currentfile = readdir($imgdir))) {					  // Do this loop for every file found.
                                                                   // So long as it's not a directory...
     if (!is_dir($currentfile)) {
-      $temp = explode("-",$currentfile,2);
-      if(count($temp) > 1) {						                          // means it was split up as expected
-        $fontnames[$numfonts] = $currentfile;			                // An array of filenames, for later abuse.
-        $maxfontlength = max($maxfontlength, strlen(substr($temp[1],0,-4)));        // Generate a max image width based on the number of chars in a font name (x 8)
-        if ($listfonts) { $fontfiles[$numfonts] = $dir.$currentfile; }
-        if($fontchoice == $temp[0]) {
-          $fontfile = $dir.$currentfile;			// If the current file prefix matches the $fontchoice, specify the SOURCE image
-        }
-      }
-        $numfonts++;							// increment the font count.  Also used for incrementing $fontnames array.
+      $temp = explode(".",$currentfile,2);
+		$fontnames[$numfonts] = $currentfile;			                // An array of filenames, for later abuse.
+
+		if ($listfonts) { $fontfiles[$numfonts] = $dir.$currentfile; }
+		if($fontchoice == $temp[0]) {
+			$fontfile = $dir.$currentfile;			// If the current file prefix matches the $fontchoice, specify the SOURCE image
+		}
+		$numfonts++;							// increment the font count.  Also used for incrementing $fontnames array.
     }
   }
 

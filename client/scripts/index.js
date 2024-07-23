@@ -3,8 +3,9 @@ require('jquery-ui-dist/jquery-ui')
 import fonts from './fonts.js'
 import title from '../images/title.png'
 
-const endpoint = '/api.php'
+const endpoint = '/api'
 
+const indexes = Object.values(fonts)
 
 const preset = {
     size: 3,
@@ -38,7 +39,7 @@ const shake = () => {
 
 const compileUrl = (options) => {
     let url = endpoint;
-    const input = options?.input || $('#input').val() || 'I AM ERROR';
+    const input = options?.input || $('#input').val() || 'SAMPLE TEXT';
     const size = options?.size || $('#size').slider('value');
     const style = options?.style || $('#style').val();
     const font = options?.font || $('#fonts').val();
@@ -76,7 +77,7 @@ const updateTitle = () => {
     const keys = Object.keys(fonts);
     const font = keys[Math.floor(Math.random() * keys.length)];
     const style = Math.floor(Math.random() * fonts[font].styles);
-    const url = `/api.php/y-${font}/z-${style}/dbl-5/x-ARCADE FONT ENGINE`;
+    const url = `${endpoint}/y-${font}/z-${style}/dbl-5/x-ARCADE FONT ENGINE`;
     $('#title').attr('src', url)
 };
 
@@ -84,7 +85,7 @@ const updateTitle = () => {
 const fontSelected = (ui) => {
     const font = ui ? ui.item.value : preset.font
     const total = Object.keys(fonts).length
-    const index = fonts[font].index
+    const index = indexes.indexOf(fonts[font]) + 1
     const style = 0
     $('#style').val(style)
     const styles = fonts[font].styles
@@ -92,7 +93,7 @@ const fontSelected = (ui) => {
     $('#styles-legend').html(style + 1)
     $('#styles-legend-total').html(styles)
     $('#styles').empty()
-    $('#company-legend').html(fonts[font].company ? `by <span class="legend">${fonts[font].company}</span>` : '')
+    $('#dev-legend').html(fonts[font].dev ? `by <span class="legend">${fonts[font].dev}</span>` : '')
     $('#notes-legend').html(fonts[font].notes ? `by <span class="rainbow">NFG</span>` : '')
     $('#notes').html(fonts[font].notes || 'No notes for this font.')
 
