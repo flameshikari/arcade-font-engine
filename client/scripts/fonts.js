@@ -1,4 +1,5 @@
 import aura from '../images/notes/aura.png';
+import blaz from '../images/notes/blaz.png';
 import ddp from '../images/notes/ddp.png';
 import mgs from '../images/notes/mgs.png';
 import outf0 from '../images/notes/outf-0.png';
@@ -147,7 +148,7 @@ const fonts = {
         name: 'Blazing Star',
         dev: 'Yumekobo',
         styles: 8,
-        notes: `This is a nicely updated version of <img src="/api.php/y-puls/z-1/x-PULSTAR'S"> futuristic font. Many letters were updated to look more consistently spacey, instead of like the standard Namco font with a few futuristic bits n bobs.`
+        notes: `This is a nicely updated version of <img src="${blaz}"> futuristic font. Many letters were updated to look more consistently spacey, instead of like the standard Namco font with a few futuristic bits n bobs.`
     },
     blkt: {
         name: 'Black Tiger',
