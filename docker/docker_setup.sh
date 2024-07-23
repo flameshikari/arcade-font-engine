@@ -1,8 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
-
-rm -rf /var/www/html/*
 
 echo 'short_open_tag = On' >> /etc/php83/conf.d/custom.ini
 
