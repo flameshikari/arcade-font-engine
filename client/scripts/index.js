@@ -3,7 +3,7 @@ require('jquery-ui-dist/jquery-ui')
 import fonts from './fonts.js'
 import title from '../images/title.png'
 
-const endpoint = '/api.php'
+const endpoint = '/api'
 
 const indexes = Object.values(fonts)
 
@@ -77,7 +77,7 @@ const updateTitle = () => {
     const keys = Object.keys(fonts);
     const font = keys[Math.floor(Math.random() * keys.length)];
     const style = Math.floor(Math.random() * fonts[font].styles);
-    const url = `/api.php/y-${font}/z-${style}/dbl-5/x-ARCADE FONT ENGINE`;
+    const url = `${endpoint}/y-${font}/z-${style}/dbl-5/x-ARCADE FONT ENGINE`;
     $('#title').attr('src', url)
 };
 
