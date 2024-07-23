@@ -39,7 +39,7 @@ const shake = () => {
 
 const compileUrl = (options) => {
     let url = endpoint;
-    const input = options?.input || $('#input').val() || 'I AM ERROR';
+    const input = options?.input || $('#input').val() || 'SAMPLE TEXT';
     const size = options?.size || $('#size').slider('value');
     const style = options?.style || $('#style').val();
     const font = options?.font || $('#fonts').val();
