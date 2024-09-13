@@ -4,7 +4,7 @@
 
 ## ℹ️ Description
 
-The backend was coded in PHP by <a href="https://nfgworld.com/">NFG</a> (you can get the original source code from <a href="https://nfggames.com/system/arcade/builder.php">here</a>). I remade the frontend based on <a href="https://nfggames.com/games/fontmaker/">the original website</a> with my own vision, tweaked the PHP-script a little and containerized the app.
+[The original tool](https://nfggames.com/games/fontmaker/) was made by <a href="https://nfgworld.com/">NFG</a> (you can get the original source code from <a href="https://nfggames.com/system/arcade/builder.php">here</a>). I remade the frontend based with my own vision, tweaked the PHP-script a little and containerized the app.
 
 
 ## 🐳 Installation
