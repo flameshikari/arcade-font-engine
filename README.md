@@ -1,4 +1,4 @@
-![Arcade Font Engine](./.github/assets/logo.png)
+<center><img src="./.github/assets/logo.png"></center>
 
 ## ℹ️ Description 
 
