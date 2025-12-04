@@ -5,13 +5,14 @@ import esbuildBabel from '@chialab/esbuild-plugin-babel';
 import esbuildBrowserlist from 'browserslist-to-esbuild';
 import htmlPlugin from '@chialab/esbuild-plugin-html';
 
+const isProd = process.env.NODE_ENV === 'production';
 
 const babelOpts = {
     presets: [
         [
             '@babel/preset-env', {
                 useBuiltIns: 'usage',
-                corejs: '3.37.1',
+                corejs: '3.47.0',
                 modules: false,
             },
         ],
@@ -20,7 +21,7 @@ const babelOpts = {
 
 const esbuildOpts = {
     target: esbuildBrowserlist(),
-    minify: true,
+    minify: isProd ? true : false,
     outdir: 'public',
     splitting: true,
     loader: {
@@ -30,7 +31,7 @@ const esbuildOpts = {
     },
     format: 'esm',
     bundle: true,
-    treeShaking: true,
+    treeShaking: isProd ? true : false,
     write: true,
     legalComments: 'none',
     assetNames: '[name]',
@@ -58,9 +59,11 @@ await esbuild.build({
     ...esbuildOpts,
     entryPoints: ['./client/index.html'],
     plugins: [
-        esbuildBabel(babelOpts),
+        esbuildBabel(
+            isProd ? babelOpts : {},
+        ),
         htmlPlugin({
-            minifyOptions: minifyOptions,
+            minifyOptions: isProd ? minifyOptions : {},
         }),
     ],
 });

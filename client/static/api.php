@@ -125,6 +125,7 @@ $bigdir = './images/fonts/large/';
 
 				// where the components for the speech bubbles are
 $bubblepath = "./images/bubble/";
+$bubbletheme = 'light'; // 'light' or 'dark'
 
                 // I suspect you'll want to stick to 8x8 characters, but if you get something bigger, specify the size here.
                 // Note: this can be overridden later with the H and V parameters.  This just sets the default.
@@ -176,6 +177,10 @@ if ($phpbbfriendly == 1) {
 	}
 	
 	$string = (isset($out["x"])) ? $out["x"] : "NULL";
+
+    if (isset($out["bt"])) {
+        $bubbletheme = ($out["bt"] === 'dark') ? 'dark' : 'light';
+    }
 
 	// Get the desired font file:
 	if (isset($out["y"])) {
@@ -270,6 +275,10 @@ if ($phpbbfriendly == 1) {
 	} else {
 		$charcolor = "1";
 	}
+
+    if (isset($_GET["bt"])) {
+        $bubbletheme = ($_GET["bt"] === 'dark') ? 'dark' : 'light';
+    }
 
 	// Check dbl: if set, it becomes the multiplier (up to 6x)
 	if (isset($_GET["dbl"])) {
@@ -486,6 +495,8 @@ if (isset($colorize)) {
 /*         Two save-routines: big and x size        */
 /* ------------------------------------------------ */
 
+$bubblethemepath = $bubblepath . $bubbletheme . '/';
+
 if (isset($b)) {
 
 
@@ -501,10 +512,10 @@ if (isset($b)) {
 		$s = "c";
 	}
 	$pname = $s."-".$dir.".png";
-	$pt = imagecreatefrompng($bubblepath.$pname);
+	$pt = imagecreatefrompng($bubblethemepath.$pname);
 	// got the pointer.
 	// now build step 1 - the background
-	$bgt = imagecreatefrompng($bubblepath."bg.png");
+	$bgt = imagecreatefrompng($bubblethemepath."bg.png");
 
 	$width = imagesx($newimg);
 	$height = imagesy($newimg);
@@ -520,8 +531,8 @@ if (isset($b)) {
 	$bg = imagecolorallocatealpha($step2,255,255,255,127);
 	imagefill($step2,0,0,$bg);
 	imagecopy($step2,$step1,4,0,0,0,$widthb,$heightb);
-	$lft = imagecreatefrompng($bubblepath.'l-end.png');
-	$rgt = imagecreatefrompng($bubblepath.'r-end.png');
+	$lft = imagecreatefrompng($bubblethemepath.'l-end.png');
+	$rgt = imagecreatefrompng($bubblethemepath.'r-end.png');
 	imagecopy($step2,$lft,0,0,0,0,4,16);
 	imagecopy($step2,$rgt,$widthb+4,0,0,0,4,16);
 

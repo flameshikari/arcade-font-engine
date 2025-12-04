@@ -1,14 +1,14 @@
 {
-  "name": "terminage",
+  "name": "arcade-font-engine",
   "author": "flameshikari",
-  "homepage": "https://github.com/flameshikari/terminage",
-  "license": "mit",
+  "homepage": "https://github.com/flameshikari/arcade-font-engine",
   "type": "module",
   "scripts": {
     "clear": "mkdir -p public && rm -rf public/*",
     "copy": "mkdir -p public && cp -rf client/static/* public",
-    "build": "npm run clear && npm run copy && node client/index.js",
-    "start": "nodemon --exec 'npm run build'"
+    "build:dev": "npm run clear && npm run copy && NODE_ENV=development node client/index.js",
+    "build:prod": "npm run clear && npm run copy && NODE_ENV=production node client/index.js",
+    "start": "nodemon --exec 'npm run build:dev'"
   },
   "imports": {
     "#root": "."
@@ -30,14 +30,15 @@
     "@chialab/esbuild-plugin-babel": "^0.18.0",
     "@chialab/esbuild-plugin-html": "^0.18.2",
     "browserslist-to-esbuild": "^2.1.1",
-    "core-js": "^3.37.1",
+    "core-js": "^3.47.0",
     "esbuild": "^0.21.5",
-    "htmlnano": "^2.1.1",
+    "htmlnano": "^2.1.5",
     "jquery": "^3.7.1",
     "jquery-ui-dist": "^1.13.3",
-    "nodemon": "^3.1.3",
+    "nodemon": "^3.1.11",
     "rcpy": "^1.0.2",
-    "reflex-grid": "^2.0.8",
-    "svgo": "^3.3.2"
+    "relateurl": "^0.2.7",
+    "srcset": "^5.0.2",
+    "terser": "^5.44.1"
   }
 }
