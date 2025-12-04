@@ -9,6 +9,7 @@ on:
       - .github/workflows/*
       - client/*
       - docker/*
+      - package.json
       - Dockerfile
 
 jobs:
