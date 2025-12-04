@@ -1,17 +1,14 @@
-FROM node:20-slim AS build
+FROM oven/bun:1.3.3-alpine AS build
 WORKDIR /app
 COPY --chown=node package.json .
-RUN npm install -d --no-package-lock
+RUN bun install
 COPY . .
-RUN npm run build
+RUN bun run build:prod
 
-FROM erseco/alpine-php-webserver:3.20.4 AS release
+FROM erseco/alpine-php-webserver:3.22.2 AS release
 USER root
-RUN apk add --no-cache bash && \
-    rm -rf /var/www/html/*
-COPY ./docker/docker_setup.sh /setup.sh
-COPY ./docker/populate_cache.sh /usr/bin/populate
-RUN bash /setup.sh && \
-    chmod +x /usr/bin/populate
-COPY --chown=nobody:nobody --from=build /app/public/. /var/www/html
+RUN apk add bash && echo 'short_open_tag = On' >> /etc/php84/php.ini
+COPY --chmod=0755 rootfs/ /
+WORKDIR /app
+COPY --chown=nobody --from=build /app/public/. .
 USER nobody

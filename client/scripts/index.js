@@ -10,6 +10,7 @@ const indexes = Object.values(fonts)
 const preset = {
     size: 3,
     bubble: 25,
+    mode: 'light',
     font: 'arcade',
 }
 
@@ -37,6 +38,83 @@ const shake = () => {
 };
 
 
+document.addEventListener('keydown', function(event) {
+    if (event.ctrlKey) {
+        switch (event.key) {
+
+            case 'ArrowUp':
+            case 'ArrowDown': {
+                event.preventDefault();
+                const $sel = $('#fonts');
+                const len = $sel[0].options.length;
+                const int = event.key == 'ArrowUp' ? -1 : 1;
+                const next = ($sel.prop('selectedIndex') + int) % len;
+                $sel.prop('selectedIndex', next).trigger('change');
+                $sel.selectmenu('refresh');
+                preset.font = $('#fonts option:selected').val();
+                fontSelected();
+                break;
+            }
+
+            case 'ArrowLeft':
+            case 'ArrowRight':{
+                event.preventDefault();
+                const $sel = $('#styles');
+                const len  = $sel[0].childNodes.length;
+                const int  = event.key === 'ArrowLeft' ? -1 : 1;
+                const current = Number($('#style').val());
+                const next = (current + int + len) % len;
+                $('#style').val(next);
+                $('#styles-legend').html(next + 1)
+                updatePreviews(true);
+                break;
+            }
+
+            case '-':
+            case '=':
+            case '+': {
+                event.preventDefault();
+                const step = event.key === '-' ? -1 : 1;
+                const len = 6;
+                const current = $('#size').slider('value');
+                const next = ((current - 1 + step + len) % len) + 1;
+                $('#size').slider('value', next);
+                $('#size-legend').html('X' + next);
+                updatePreviews(true);
+                break;
+            }
+
+        }
+    }
+});
+
+
+const leet = function () {
+  const target = document.getElementById('leet');
+  if (!target) return;
+  const baseText = target.textContent;
+  const leetMap = {
+    a: '4',
+    e: '3',
+    i: '1',
+    o: '0',
+    s: '5',
+    t: '7'
+  };
+  function step() {
+    const chars = baseText.split('');
+    const newText = chars.map(ch => {
+      const lower = ch.toLowerCase();
+      if (leetMap[lower] && Math.random() < 0.4) {
+        return leetMap[lower];
+      }
+      return ch;
+    }).join('');
+    target.textContent = newText;
+  }
+  setInterval(step, 150);
+};
+
 const compileUrl = (options) => {
     let url = endpoint;
     const input = options?.input || $('#input').val() || 'SAMPLE TEXT';
@@ -51,7 +129,8 @@ const compileUrl = (options) => {
         if (bubble) {
             const bubbleFlip = $('#bubble-flip').is(':checked');
             const bubblePosition = $('#bubble-position').slider('value');
-            url += (bubbleFlip ? '/b-u' : '/b-d') + '/bp-' + bubblePosition;
+            const bubbleTheme = $('#bubble-theme').is(':checked');
+            url += (bubbleFlip ? '/b-u' : '/b-d') + (bubbleTheme ? '/bt-dark' : '/bt-light') + '/bp-' + bubblePosition;
         };
         if (size >= 2) url += '/dbl-' + size;
     };
@@ -90,12 +169,15 @@ const fontSelected = (ui) => {
     $('#style').val(style)
     const styles = fonts[font].styles
 
+
     $('#styles-legend').html(style + 1)
     $('#styles-legend-total').html(styles)
     $('#styles').empty()
     $('#dev-legend').html(fonts[font].dev ? `by <span class="legend">${fonts[font].dev}</span>` : '')
-    $('#notes-legend').html(fonts[font].notes ? `by <span class="rainbow">NFG</span>` : '')
+    $('#notes-legend').html(fonts[font].notes ? `` : '')
     $('#notes').html(fonts[font].notes || 'No notes for this font.')
+
+    // $('#glyphs-legend').html(fonts[font].notes ? $('#glyphs-legend')[0].classList.add('rainbow') : $('#glyphs-legend')[0].classList.remove('rainbow'))
 
     for (let i = 0; i < styles; i++) {
         const url = `${endpoint}/dbl-2/y-${font}/z-${i}/x-${previews.uppercase.charAt(i)}`
@@ -118,8 +200,9 @@ const fontSelected = (ui) => {
 }
 
 window.onload = () => {
+    leet();
     $('#title').attr('src', title)
-    $('#bubble, #bubble-flip').click(() => updatePreviews())
+    $('#bubble, #bubble-flip, #bubble-theme').click(() => updatePreviews())
     $('#change').click(() => updatePreviews())
 
     $('#title').click(() => {
@@ -188,6 +271,7 @@ window.onload = () => {
 
     $("#bubble").checkboxradio({ icon: false });
     $("#bubble-flip").checkboxradio({ icon: false });
+    $("#bubble-theme").checkboxradio({ icon: false });
     $('#bubble-legend').html(preset.bubble + '%')
     $('#size-legend').html('X' + preset.size)
     fontSelected()
