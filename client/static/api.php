@@ -125,7 +125,7 @@ $bigdir = './images/fonts/large/';
 
 				// where the components for the speech bubbles are
 $bubblepath = "./images/bubble/";
-$bubbletheme = 'light'; // 'light' or 'dark'
+$bubbletheme = 'l'; // 'l' for light or 'd' for dark
 
                 // I suspect you'll want to stick to 8x8 characters, but if you get something bigger, specify the size here.
                 // Note: this can be overridden later with the H and V parameters.  This just sets the default.
@@ -179,7 +179,7 @@ if ($phpbbfriendly == 1) {
 	$string = (isset($out["x"])) ? $out["x"] : "NULL";
 
     if (isset($out["bt"])) {
-        $bubbletheme = ($out["bt"] === 'dark') ? 'dark' : 'light';
+        $bubbletheme = ($out["bt"] === 'd') ? 'd' : 'l';
     }
 
 	// Get the desired font file:
@@ -277,7 +277,7 @@ if ($phpbbfriendly == 1) {
 	}
 
     if (isset($_GET["bt"])) {
-        $bubbletheme = ($_GET["bt"] === 'dark') ? 'dark' : 'light';
+        $bubbletheme = ($_GET["bt"] === 'd') ? 'd' : 'l';
     }
 
 	// Check dbl: if set, it becomes the multiplier (up to 6x)
@@ -335,11 +335,9 @@ if (empty($string)) { $string = "Arcade Font Engine"; };
 /* ------------------------------------------------ */
 
 
-
-
 if ((!$listfonts) or (!$countfonts)) {
 	$stringhash = hash('xxh3', urlencode($string));
-	$filename = $fontchoice."-".$charcolor."-".$doublesize."-".(isset($out["b"]) ? $b.$bp."-" : "").$stringhash.".png";
+	$filename = $fontchoice."-".$charcolor."-".$doublesize."-".(isset($out["b"]) ? $b.$bp.$bubbletheme."-" : "").$stringhash.".png";
 	$current = $filepath.$filename;
 	// Check the cache.  If the file exists, spit it out and die:
 	if (file_exists($current)) {

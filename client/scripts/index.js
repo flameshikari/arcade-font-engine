@@ -10,7 +10,7 @@ const indexes = Object.values(fonts)
 const preset = {
     size: 3,
     bubble: 25,
-    mode: 'light',
+    mode: 'l',
     font: 'arcade',
 }
 
@@ -128,9 +128,9 @@ const compileUrl = (options) => {
         const bubble = options?.bubble || $('#bubble').is(':checked');
         if (bubble) {
             const bubbleFlip = $('#bubble-flip').is(':checked');
-            const bubblePosition = $('#bubble-position').slider('value');
             const bubbleTheme = $('#bubble-theme').is(':checked');
-            url += (bubbleFlip ? '/b-u' : '/b-d') + (bubbleTheme ? '/bt-dark' : '/bt-light') + '/bp-' + bubblePosition;
+            const bubblePosition = $('#bubble-position').slider('value');
+            url += (bubbleFlip ? '/b-u' : '/b-d') + (bubbleTheme ? '/bt-d' : '/bt-l') + `/bp-${bubblePosition}`;
         };
         if (size >= 2) url += '/dbl-' + size;
     };
