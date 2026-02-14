@@ -47,8 +47,8 @@ document.addEventListener('keydown', function(event) {
                 event.preventDefault();
                 const $sel = $('#fonts');
                 const len = $sel[0].options.length;
-                const int = event.key == 'ArrowUp' ? -1 : 1;
-                const next = ($sel.prop('selectedIndex') + int) % len;
+                const int = event.key === 'ArrowUp' ? -1 : 1;
+                const next = ($sel.prop('selectedIndex') + int + len) % len;
                 $sel.prop('selectedIndex', next).trigger('change');
                 $sel.selectmenu('refresh');
                 preset.font = $('#fonts option:selected').val();
@@ -60,7 +60,7 @@ document.addEventListener('keydown', function(event) {
             case 'ArrowRight':{
                 event.preventDefault();
                 const $sel = $('#styles');
-                const len  = $sel[0].childNodes.length;
+                const len  = $sel[0].children.length;
                 const int  = event.key === 'ArrowLeft' ? -1 : 1;
                 const current = Number($('#style').val());
                 const next = (current + int + len) % len;
@@ -131,9 +131,9 @@ const compileUrl = (options) => {
             const bubbleTheme = $('#bubble-theme').is(':checked');
             const bubblePosition = $('#bubble-position').slider('value');
             url += (bubbleFlip ? '/b-u' : '/b-d') + (bubbleTheme ? '/bt-d' : '/bt-l') + `/bp-${bubblePosition}`;
-        };
+        }
         if (size >= 2) url += '/dbl-' + size;
-    };
+    }
     url += '/y-' + font + '/z-' + style + '/x-' + input;
     return url;
 };
@@ -193,7 +193,7 @@ const fontSelected = (ui) => {
                 updatePreviews(true)
             },
         }));
-    };
+    }
     $('#font-legend').html(index);
     $('#font-legend-total').html(total);
     updatePreviews(true);
@@ -247,10 +247,8 @@ window.onload = () => {
             if (event.which > 127) event.preventDefault();
             sanitizeString();
         })
-        .bind('paste', async (event) => {
-            await new Promise(resolve => setTimeout(() => {
-                resolve(sanitizeString());
-            }, 0));
+        .on('paste', () => {
+            setTimeout(() => sanitizeString(), 0);
         })
         .change(() => {
             sanitizeString();

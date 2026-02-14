@@ -173,7 +173,7 @@ if ($phpbbfriendly == 1) {
 	$out = array();
 	foreach($bits as $bite) {
 		$temp = explode("-",$bite, 2);
-		@$out[$temp[0]] = $temp[1];
+		if (isset($temp[0])) $out[$temp[0]] = isset($temp[1]) ? $temp[1] : '';
 	}
 	
 	$string = (isset($out["x"])) ? $out["x"] : "NULL";
@@ -337,7 +337,7 @@ if (empty($string)) { $string = "Arcade Font Engine"; };
 
 if ((!$listfonts) or (!$countfonts)) {
 	$stringhash = hash('xxh3', urlencode($string));
-	$filename = $fontchoice."-".$charcolor."-".$doublesize."-".(isset($out["b"]) ? $b.$bp.$bubbletheme."-" : "").$stringhash.".png";
+	$filename = $fontchoice."-".$charcolor."-".$doublesize."-".(isset($b) ? $b.$bp.$bubbletheme."-" : "").$stringhash.".png";
 	$current = $filepath.$filename;
 	// Check the cache.  If the file exists, spit it out and die:
 	if (file_exists($current)) {
@@ -380,7 +380,7 @@ $imgdir = opendir($dir) or die('Tick was here.  Can\'t open IMG dir.');						// 
 
 
 closedir($imgdir);
-if ($listfonts) sort($fontfiles[$numfonts]);
+if ($listfonts && isset($fontfiles)) sort($fontfiles);
 
 /* ------------------------------------------------ */
 /*             Special-case adjustments             */

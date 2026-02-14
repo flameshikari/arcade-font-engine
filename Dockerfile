@@ -1,4 +1,4 @@
-FROM oven/bun:1.3.3-alpine AS build
+FROM oven/bun:latest AS build
 WORKDIR /app
 COPY --chown=node package.json .
 RUN bun install

@@ -15,7 +15,7 @@
         <meta name="robots" content="index,follow">
         <meta name="googlebot" content="index,follow">
         <meta name="google" content="notranslate">
-        <link href="./favicon.ico" type="image/x-icon"  type="image/png" />
+        <link rel="icon" href="./favicon.ico" type="image/x-icon" />
         <link href="./styles/index.css" rel="stylesheet" />
     </head>
     <body>
@@ -44,7 +44,7 @@
                 </fieldset>
 
                 <fieldset class="col-sm-auto cell bubble">
-                    <legend>Bubble <span class="legend" id="bubble-legend"></span><font color="222222"> #</font>
+                    <legend>Bubble <span class="legend" id="bubble-legend"></span><span style="color:#222"> #</span>
                         <span>
                             <label for="bubble">Show</label>
                             <input class="shake" type="checkbox" name="bubble" id="bubble">
@@ -70,12 +70,12 @@
 
                 <fieldset class="col-sm-12 cell styles">
                     <input id="style" type="hidden" value="0"/>
-                    <legend>Style <span class="legend" id="styles-legend"></span> of <span class="legend" id="styles-legend-total"></legend>
+                    <legend>Style <span class="legend" id="styles-legend"></span> of <span class="legend" id="styles-legend-total"></span></legend>
                     <p id="styles"></p>
                 </fieldset>
 
                 <fieldset class="col-12 cell glyphs">
-                    <legend><span id="glyphs-legend">Glyphs</span> <span id="dev-legend"></legend>
+                    <legend><span id="glyphs-legend">Glyphs</span> <span id="dev-legend"></span></legend>
                     <span id="glyphs">
                         <img id="uppercase">
                         <br>
@@ -108,17 +108,17 @@
                     <legend>Links</legend>
                     <p>
                         <a target="_blank" class="shake rainbow" href="https://nfgworld.com/arcade-fonts-only-64-pixels/">NFG</a>
-                        <font color="222222">#</font>
+                        <span style="color:#222">#</span>
                         <a target="_blank" class="shake" style="color: #ff0000;" href="https://hexed.pw">flameshikari</a>
-                        <font color="222222">#</font>
+                        <span style="color:#222">#</span>
                         <a target="_blank" class="shake" style="color: #0000ff;" href="https://nfggames.com/games/fontmaker/">Original</a>
-                        <font color="222222">#</font>
+                        <span style="color:#222">#</span>
                         <a id="leet" target="_blank" class="shake" style="color: #00ff00;" href="https://github.com/flameshikari/arcade-font-engine">Source Code</a>
                     </p>
                 </fieldset>
 
             </div>
         </div>
+        <script src="./scripts/index.js"></script>
     </body>
-    <script src="./scripts/index.js"></script>
 </html>

@@ -21,7 +21,7 @@ const babelOpts = {
 
 const esbuildOpts = {
     target: esbuildBrowserlist(),
-    minify: isProd ? true : false,
+    minify: isProd,
     outdir: 'public',
     splitting: true,
     loader: {
@@ -31,7 +31,7 @@ const esbuildOpts = {
     },
     format: 'esm',
     bundle: true,
-    treeShaking: isProd ? true : false,
+    treeShaking: isProd,
     write: true,
     legalComments: 'none',
     assetNames: '[name]',

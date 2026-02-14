@@ -74,7 +74,7 @@ legend {
 
 img {
 	all: unset;
-	height: 100% auto;
+	height: auto;
 	max-width: 100%;
 	vertical-align: middle;
 }
@@ -149,9 +149,7 @@ input {
 .cell {
 	padding: 2ch;
 	margin: 1ch;
-	text-align: left;
 	border: 1px solid #222;
-	background: #00000077;
 	text-align: center;
 	line-height: 1.5;
 	vertical-align: middle;
