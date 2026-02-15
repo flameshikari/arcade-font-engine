@@ -15,7 +15,7 @@
         <meta name="robots" content="index,follow">
         <meta name="googlebot" content="index,follow">
         <meta name="google" content="notranslate">
-        <link rel="icon" href="./favicon.ico" type="image/x-icon" />
+        <link rel="icon" href="./favicon.ico" type="image/x-icon">
         <link href="./styles/index.css" rel="stylesheet" />
     </head>
     <body>
@@ -25,57 +25,35 @@
                     <img class="shake pointer" id="title"/>
                 </div>
 
-                <fieldset class="col-md-4 cell fonts">
-                    <legend>Font <span class="legend" id="font-legend"></span> of <span class="legend" id="font-legend-total"></span>
-                    </legend>
-                    <select id="fonts"></select>
-                </fieldset>
-
-                <fieldset class="col-sm-auto cell size">
-                    <legend>Size <span class="legend" id="size-legend"></span></legend>
-                    <table class="tableList">
-                        <tr>
-                            <td>&#8203;</td>
-                            <td>
-                                <div class="pointer" id="size"></div>
-                            </td>
-                        </tr>
-                    </table>
-                </fieldset>
-
-                <fieldset class="col-sm-auto cell bubble">
-                    <legend>Bubble <span class="legend" id="bubble-legend"></span><span style="color:#222"> #</span>
-                        <span>
-                            <label for="bubble">Show</label>
-                            <input class="shake" type="checkbox" name="bubble" id="bubble">
-                        </span>
-                        <span>
-                            <label for="bubble-flip">Flip</label>
-                            <input type="checkbox" name="bubble-flip" id="bubble-flip">
-                        </span>
-                        <span>
-                            <label for="bubble-theme">Dark</label>
-                            <input type="checkbox" name="bubble-theme" id="bubble-theme">
+                <fieldset class="col-md-5 cell fonts">
+                    <legend><span>Font <span class="legend" id="font-legend"></span> of <span class="legend" id="font-legend-total"></span></span>
+                        <span class="legend-line"></span>
+                        <span class="output-links">
+                            <a target="_blank" class="shake" style="color:#00ffff" href="https://nfggames.com/games/fontmaker/">Original</a>
+                            <a id="leet" target="_blank" class="shake" style="color:#00ff00" href="https://github.com/flameshikari/arcade-font-engine">Source</a>
                         </span>
                     </legend>
-                    <table class="tableList">
-                        <tr>
-                            <td>&#8203;</td>
-                            <td>
-                                <div class="pointer" id="bubble-position"></div>
-                            </td>
-                        </tr>
-                    </table>
+                    <div class="slider-row">
+                        <span class="glyph" id="font-prev">&lsaquo;</span>
+                        <div class="slider-fill">
+                            <select id="fonts"></select>
+                        </div>
+                        <span class="glyph" id="font-next">&rsaquo;</span>
+                    </div>
                 </fieldset>
 
-                <fieldset class="col-sm-12 cell styles">
+                <fieldset class="col-md-auto cell styles">
                     <input id="style" type="hidden" value="0"/>
                     <legend>Style <span class="legend" id="styles-legend"></span> of <span class="legend" id="styles-legend-total"></span></legend>
-                    <p id="styles"></p>
+                    <div class="slider-row">
+                        <span class="glyph" id="style-prev">&lsaquo;</span>
+                        <p id="styles" class="slider-fill"></p>
+                        <span class="glyph" id="style-next">&rsaquo;</span>
+                    </div>
                 </fieldset>
 
                 <fieldset class="col-12 cell glyphs">
-                    <legend><span id="glyphs-legend">Glyphs</span> <span id="dev-legend"></span></legend>
+                    <legend><span class="shake" id="glyphs-legend">Glyphs</span> <span id="dev-legend"></span></legend>
                     <span id="glyphs">
                         <img id="uppercase">
                         <br>
@@ -85,14 +63,43 @@
                     </span>
                 </fieldset>
 
-                <!-- <fieldset class="col-12 cell notes">
-                    <legend>Notes <span id="notes-legend"></span></legend>
-                    <p id="notes"></p>
-                </fieldset> -->
-
-                <fieldset class="col-12 cell input">
-                    <legend>Input</legend>
+                <fieldset class="col-md-auto cell input">
+                    <legend><span class="shake" style="cursor: help; color:#0000ff;" id="shortcuts-trigger">Input</span></legend>
                     <input class="blinker" id="input" placeholder="TYPE HERE!" type="text" name="string">
+                </fieldset>
+
+                <fieldset class="col-sm-auto cell size">
+                    <legend>Size <span class="legend" id="size-legend"></span></legend>
+                    <div class="slider-row">
+                        <span class="glyph" id="size-dec">-</span>
+                        <div class="slider-fill">
+                            <div class="pointer" id="size"></div>
+                        </div>
+                        <span class="glyph" id="size-inc">+</span>
+                    </div>
+                </fieldset>
+
+                <fieldset class="col-sm-auto cell bubble">
+                    <legend>
+                        <label class="shake" for="bubble">Bubble</label>
+                        <input class="shake" type="checkbox" name="bubble" id="bubble">
+                        <span class="bubble-toggle">
+                            <label class="shake bubble-opt" for="bubble-flip">Flip</label>
+                            <input type="checkbox" name="bubble-flip" id="bubble-flip">
+                        </span>
+                        <span class="bubble-toggle">
+                            <label class="shake bubble-opt" for="bubble-theme">Dark</label>
+                            <input type="checkbox" name="bubble-theme" id="bubble-theme">
+                        </span>
+                        <span class="legend" id="bubble-legend"></span>
+                    </legend>
+                    <div class="slider-row bubble-slider">
+                        <span class="glyph" id="bubble-dec">-</span>
+                        <div class="slider-fill">
+                            <div class="pointer" id="bubble-position"></div>
+                        </div>
+                        <span class="glyph" id="bubble-inc">+</span>
+                    </div>
                 </fieldset>
 
                 <fieldset class="col-12 cell output">
@@ -104,21 +111,34 @@
                     </div>
                 </fieldset>
 
-                <fieldset class="col-12 cell credits">
-                    <legend>Links</legend>
-                    <p>
-                        <a target="_blank" class="shake rainbow" href="https://nfgworld.com/arcade-fonts-only-64-pixels/">NFG</a>
-                        <span style="color:#222">#</span>
-                        <a target="_blank" class="shake" style="color: #ff0000;" href="https://hexed.pw">flameshikari</a>
-                        <span style="color:#222">#</span>
-                        <a target="_blank" class="shake" style="color: #0000ff;" href="https://nfggames.com/games/fontmaker/">Original</a>
-                        <span style="color:#222">#</span>
-                        <a id="leet" target="_blank" class="shake" style="color: #00ff00;" href="https://github.com/flameshikari/arcade-font-engine">Source Code</a>
-                    </p>
-                </fieldset>
-
             </div>
         </div>
+        <div id="shortcuts-popup">
+            <center>Keyboard Shortcuts</center>
+            <br>
+            <span style="color:#ff8000">CTRL + M</span> <span style="color:#666">&mdash;</span> Font Selection
+            <br>
+            <span style="color:#ff8000">CTRL + <span style="display:inline-block;transform:rotate(-90deg)">&lt;</span>/<span style="display:inline-block;transform:rotate(-90deg)">&gt;</span></span> <span style="color:#666">&mdash;</span> Change Font
+            <br>
+            <span style="color:#ff8000">CTRL + &lt;/&gt;</span> <span style="color:#666">&mdash;</span> Change Style
+            <br>
+            <span style="color:#ff8000">CTRL + -/+</span> <span style="color:#666">&mdash;</span> Change Size
+            <br>
+            <span style="color:#ff8000">CTRL + \</span> <span style="color:#666">&mdash;</span> Toggle Bubble
+            <br>
+            <span style="color:#ff8000">CTRL + [/]</span> <span style="color:#666">&mdash;</span> Bubble Position
+            <br>
+            <span style="color:#ff8000">CTRL + '</span> <span style="color:#666">&mdash;</span> Flip Bubble
+            <br>
+            <span style="color:#ff8000">CTRL + ;</span> <span style="color:#666">&mdash;</span> Dark Bubble
+            <br>
+            <span style="color:#ff8000">CTRL + F</span> <span style="color:#666">&mdash;</span> Focus Input
+            <br>
+            <span style="color:#ff8000">CTRL + L</span> <span style="color:#666">&mdash;</span> Clear Input
+            <br>
+            <span style="color:#ff8000">ESC</span> <span style="color:#666">&mdash;</span> Unfocus Input
+        </div>
+        <div id="notes-popup"></div>
         <script src="./scripts/index.js"></script>
     </body>
 </html>
