@@ -2,6 +2,7 @@ window.$ = window.jQuery = require('jquery');
 require('jquery-ui-dist/jquery-ui');
 import fonts from './fonts.js';
 import title from '../images/title.png';
+import { render, getFontImage } from './renderer.js';
 
 const endpoint = '/api';
 
@@ -122,39 +123,53 @@ const compileUrl = (options) => {
         }
         if (size >= 2) url += `/dbl-${size}`;
     }
+    if (options?.format) url += `/f-${options.format}`;
     url += `/y-${font}/z-${style}/x-${input}`;
     return url;
 };
 
-const preload = (urls) => new Promise(resolve => {
-    let loaded = 0;
-    const images = urls.map(url => {
-        const img = new Image();
-        img.onload = img.onerror = () => { if (++loaded >= urls.length) resolve(images); };
-        img.src = url;
-        return img;
-    });
-});
+
+const getRenderOpts = (overrides = {}) => {
+    const input = overrides.input || $('#input').val() || 'SAMPLE TEXT';
+    const size = overrides.size || $('#size').slider('value');
+    const style = overrides.style ?? Number($('#style').val());
+    const font = overrides.font || $('#fonts').val();
+    const bubble = overrides.bubble ?? $('#bubble').is(':checked');
+    return {
+        text: input,
+        font,
+        style,
+        size: overrides.glyphs ? 3 : size,
+        bubble: overrides.glyphs ? false : bubble,
+        bubbleFlip: $('#bubble-flip').is(':checked'),
+        bubbleTheme: $('#bubble-theme').is(':checked'),
+        bubblePos: $('#bubble-position').slider('value'),
+    };
+};
 
 const updatePreviews = (glyphs = false) => {
     shake();
     if (glyphs) {
-        const keys = Object.keys(previews);
-        const urls = Object.values(previews).map(v => compileUrl({ input: v, glyphs: true }));
-        preload(urls).then(images => {
-            keys.forEach((key, i) => $(`#${key}`).attr('src', images[i].src));
-        });
+        for (const [key, text] of Object.entries(previews)) {
+            render(getRenderOpts({ input: text, glyphs: true })).then(src => {
+                $(`#${key}`).attr('src', src);
+            });
+        }
     }
-    const url = compileUrl();
-    preload([url]).then(() => { $('#output').attr('src', url); });
-    $('#blank').attr('href', url);
+    const opts = getRenderOpts();
+    render(opts).then(src => { $('#output').attr('src', src); });
+    const apiUrl = compileUrl();
+    $('#blank').attr('href', apiUrl);
+    $('#save-png').attr('href', apiUrl);
+    $('#save-svg').attr('href', compileUrl({ format: 'svg' }));
 };
 
 const updateTitle = () => {
     const font = fontKeys[Math.floor(Math.random() * fontTotal)];
     const style = Math.floor(Math.random() * fonts[font].styles);
-    const url = `${endpoint}/y-${font}/z-${style}/dbl-5/x-ARCADE FONT ENGINE`;
-    preload([url]).then(() => { $('#title').attr('src', url); });
+    render({ text: 'ARCADE FONT ENGINE', font, style, size: 5 }).then(src => {
+        $('#title').attr('src', src);
+    });
 };
 
 const navigateFont = (dir) => {
@@ -240,11 +255,11 @@ const fontSelected = (ui) => {
         $('#notes-popup').hide();
     }
 
-    const urls = [];
     const wraps = [];
+    const renderPromises = [];
     for (let i = 0; i < styles; i++) {
-        const url = `${endpoint}/dbl-2/y-${font}/z-${i}/x-${previews.uppercase.charAt(i)}`;
-        urls.push(url);
+        const letter = previews.uppercase.charAt(i);
+        const $img = $('<img>');
         const $wrap = $('<span>', {
             class: 'shake pointer style style-wrap',
             value: i,
@@ -253,11 +268,16 @@ const fontSelected = (ui) => {
                 if ($el.hasClass('style-selected')) return;
                 setStyle(Number($el.attr('value')));
             },
-        }).append($('<img>', { src: url }));
-        $wrap[0].style.setProperty('--style-src', `url(${url})`);
+        }).append($img);
         wraps.push($wrap);
+        renderPromises.push(
+            render({ text: letter, font, style: i, size: 2 }).then(src => {
+                $img.attr('src', src);
+                $wrap[0].style.setProperty('--style-src', `url(${src})`);
+            })
+        );
     }
-    preload(urls).then(() => {
+    Promise.all(renderPromises).then(() => {
         const $styles = $('#styles').empty().scrollLeft(0);
         wraps.forEach($w => $styles.append($w));
         $styles.find('.style').first().addClass('style-selected');
@@ -370,6 +390,7 @@ window.onload = () => {
     $('body').append('<div id="dropdown-overlay"></div>');
     leet();
     $('#title').attr('src', title);
+
 
     $('#bubble, #bubble-flip, #bubble-theme').click(() => updatePreviews());
     $('#bubble').change(() => {
@@ -651,8 +672,10 @@ window.onload = () => {
     touchRepeat($('#bubble-dec'), () => stepBubble(-1));
     touchRepeat($('#bubble-inc'), () => stepBubble(1));
 
+    let ready = false;
+
     $('#shortcuts-trigger').on('mouseenter', () => {
-        $('#shortcuts-popup').show();
+        if (ready) $('#shortcuts-popup').show();
     }).on('mouseleave', () => {
         $('#shortcuts-popup').hide();
     }).on('mousemove', (e) => {
@@ -661,7 +684,7 @@ window.onload = () => {
 
     const $glyphsLegend = $('#glyphs-legend');
     $glyphsLegend.on('mouseenter', () => {
-        if (!$glyphsLegend.hasClass('no-notes')) $('#notes-popup').show();
+        if (ready && !$glyphsLegend.hasClass('no-notes')) $('#notes-popup').show();
     }).on('mouseleave', () => {
         $('#notes-popup').hide();
     }).on('mousemove', (e) => {
@@ -742,6 +765,6 @@ window.onload = () => {
     const fadeIn = setInterval(() => {
         step++;
         $('#content').css('opacity', steps[step]);
-        if (step >= steps.length - 1) clearInterval(fadeIn);
+        if (step >= steps.length - 1) { clearInterval(fadeIn); ready = true; }
     }, 400);
 };

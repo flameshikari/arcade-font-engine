@@ -53,9 +53,10 @@
 }
 
 html {
-	background: black;
+	height: 100%;
 	min-height: 100vh;
 	min-height: 100dvh;
+	background: black url('../images/background.png');
 }
 
 html, body {
@@ -232,6 +233,13 @@ input::placeholder {
 
 .output-links {
 	flex-shrink: 0;
+}
+
+.output-link {
+	color: #ffff00;
+	cursor: pointer;
+	text-decoration: none;
+	margin-left: 1ch;
 }
 
 .cell {
