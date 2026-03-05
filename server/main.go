@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"log"
 	"math/rand/v2"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -800,8 +801,29 @@ func main() {
 	mux.Handle("/", http.FileServer(http.FS(contentFS)))
 
 	addr := fmt.Sprintf("%s:%d", host, port)
-	log.Printf("Arcade Font Engine %s listening on %s", version, addr)
-	if err := http.ListenAndServe(addr, loggingMiddleware(mux)); err != nil {
+	ln, err := net.Listen("tcp", addr)
+	if err != nil && port == 8080 {
+		log.Printf("Port %d busy, trying 10240", port)
+		addr = fmt.Sprintf("%s:%d", host, 10240)
+		ln, err = net.Listen("tcp", addr)
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, listenPort, _ := net.SplitHostPort(ln.Addr().String())
+	log.Printf("Arcade Font Engine %s", version)
+	if host == "0.0.0.0" || host == "" {
+		addrs, _ := net.InterfaceAddrs()
+		for _, a := range addrs {
+			if ipNet, ok := a.(*net.IPNet); ok && !ipNet.IP.IsLoopback() && ipNet.IP.To4() != nil {
+				log.Printf("  http://%s:%s", ipNet.IP, listenPort)
+			}
+		}
+		log.Printf("  http://127.0.0.1:%s", listenPort)
+	} else {
+		log.Printf("  http://%s:%s", host, listenPort)
+	}
+	if err := http.Serve(ln, loggingMiddleware(mux)); err != nil {
 		log.Fatal(err)
 	}
 }
