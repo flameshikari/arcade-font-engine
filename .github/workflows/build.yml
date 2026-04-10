@@ -13,6 +13,9 @@ env:
   DOCKER_BUILD_SUMMARY: false
   DOCKER_BUILD_RECORD_UPLOAD: false
 
+permissions:
+  packages: write
+
 jobs:
   docker:
     name: Docker [${{ matrix.arch }}]
@@ -35,13 +38,13 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.TOKEN }}
+          password: ${{ github.token }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ github.actor }}
-          password: ${{ secrets.DOCKER_TOKEN }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
       - name: Set Metadata
         uses: docker/metadata-action@v5
@@ -96,13 +99,13 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.TOKEN }}
+          password: ${{ github.token }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ github.actor }}
-          password: ${{ secrets.DOCKER_TOKEN }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -145,7 +148,7 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: '1.24'
-          cache-dependency-path: server/go.sum
+          cache: false
 
       - name: Build Frontend
         run: bun install && bun run build:prod
