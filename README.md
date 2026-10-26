@@ -31,17 +31,17 @@ services:
 
 ### Binary
 
-Available for Linux, macOS and Windows for amd64 and arm64. Download a prebuilt binary from [Releases](./releases).
+Available for Linux, macOS and Windows for amd64 and arm64. Download a prebuilt binary from [Releases](https://github.com/flameshikari/arcade-font-engine/releases).
 
 ### Build
 
-Requires [Bun](https://bun.sh/) and [Go](https://go.dev/) 1.24+.
+Requires [Bun](https://bun.sh/) and [Go](https://go.dev/) 1.27.3+.
 
 ```sh
-bun install && bun run build:prod
+bun install --frozen-lockfile && bun run build:prod
 cd server
 cp -r ../public ./public
-go mod tidy
+go mod download
 go build -ldflags="-s -w" -o arcade-font-engine .
 ```
 
@@ -79,7 +79,7 @@ Render text by constructing a URL with path-based parameters (as in the original
 | `y` | Font name | `y-arcade` |
 | `z` | Style/color index (0-based) | `z-0` |
 | `x` | Text to render | `x-HELLO` |
-| `dbl` | Scale factor (1-6) | `dbl-3` |
+| `dbl` | Scale factor (2–9; omit for 1×) | `dbl-3` |
 | `f` | Output format (`svg` or `png`) | `f-svg` |
 | `b` | Bubble direction (`u` = up, `d` = down) | `b-d` |
 | `bp` | Bubble pointer position (0-100) | `bp-25` |
