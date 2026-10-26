@@ -1,3 +1,4 @@
+import './polyfills.js';
 window.$ = window.jQuery = require('jquery');
 require('jquery-ui/dist/jquery-ui');
 import fonts from './fonts.js';

@@ -14,7 +14,27 @@ env:
   DOCKER_BUILD_RECORD_UPLOAD: false
 
 jobs:
+  compatibility:
+    name: Browser compatibility
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: '1.4.4'
+      - name: Build and validate target compatibility
+        run: bun install --frozen-lockfile && bun run build:prod
+      - name: Install browser engines
+        run: bunx playwright install --with-deps chromium firefox webkit
+      - name: Exercise browser engines and legacy API fallbacks
+        run: bun run test:browser
+
   docker:
+    needs: compatibility
     name: Docker [${{ matrix.arch }}]
     runs-on: ${{ contains(matrix.arch, 'arm') && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     permissions:
@@ -133,6 +153,7 @@ jobs:
             $(printf 'ghcr.io/${{ github.repository }}@sha256:%s ' *)
 
   binaries:
+    needs: compatibility
     name: Binary [${{ matrix.os }}/${{ matrix.arch }}]
     runs-on: ubuntu-24.04
     permissions:

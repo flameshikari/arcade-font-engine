@@ -118,13 +118,33 @@ Render text by constructing a URL with path-based parameters (as in the original
 
 ### Browser compatibility checks
 
-Both frontend build commands run `bun run check:compat` against the Browserslist
-configuration in `package.json`. Unsupported Web APIs detected by
-`eslint-plugin-compat` fail the build. Babel applies syntax transforms and
-usage-based core-js polyfills in development and production builds.
+The `browserslist` query in `package.json` is the single source of browser targets
+for both development and production builds. The resolved query drives Babel
+(including a final pass over bundled dependencies and generated wrappers),
+esbuild's HTML script targets, and PostCSS preset-env/Autoprefixer.
 
-This static check does not verify CSS, third-party dependencies, or every
-instance method. Browser testing is still required for full compatibility.
+`core-js/stable` runs before application code; Babel includes only the standard
+library polyfills required by the selected targets. ResizeObserver, Pointer
+Events (including touch dragging), and DOM manipulation shims are bundled only
+when needed. jQuery 3.x preserves compatibility with older selected browsers.
+
+`bun run check:compat` validates native prerequisites, lints application APIs and
+runs compatibility tests. The final JS bundle is also checked for known browser
+APIs in dependencies. Targets lacking essential native Canvas, Flexbox, CSS
+variables, masks, or clipping support fail with the affected browser versions;
+they are never silently removed from the query. Vendor prefixes and explicit
+fallbacks cover the admitted prefixed/partial implementations.
+
+```sh
+bun run build:prod
+bunx playwright install --with-deps chromium firefox webkit
+bun run test:browser
+```
+
+Release CI runs the built page in Chromium, Firefox and WebKit, plus a WebKit
+case with selected legacy APIs removed to exercise the polyfills and touch pan.
+These checks do not replace testing on every historical browser/device; the
+fallback case simulates missing APIs and is not an actual old iOS engine.
 
 ### Resource limits and caching
 

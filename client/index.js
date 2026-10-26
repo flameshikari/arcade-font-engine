@@ -5,7 +5,12 @@ import { createHash } from 'node:crypto';
 import { readdir, readFile, writeFile, unlink, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import esbuildBabel from '@chialab/esbuild-plugin-babel';
-import esbuildBrowserlist from 'browserslist-to-esbuild';
+import { auditBundle } from '../build/audit-bundle.js';
+import { resolveCompatibility, browserPolyfills } from '../build/compatibility.js';
+import { transformAsync } from '@babel/core';
+import { minify } from 'terser';
+import postcss from 'postcss';
+import presetEnv from 'postcss-preset-env';
 import htmlPlugin from '@chialab/esbuild-plugin-html';
 
 const assetName = (file, content) =>
@@ -27,12 +32,17 @@ const assetMap = Object.fromEntries(await Promise.all((await listFiles('client/s
 })));
 
 const isProd = process.env.NODE_ENV === 'production';
+const compatibility = resolveCompatibility();
 
 const babelOpts = {
     presets: [
         [
             '@babel/preset-env', {
-                useBuiltIns: 'usage',
+                targets: compatibility.browsers,
+                // Lower block scoping conservatively before esbuild; Safari 10
+                // has const/let bugs esbuild cannot lower on its own.
+                bugfixes: false,
+                useBuiltIns: 'entry',
                 corejs: '3.51.0',
                 modules: false,
             },
@@ -41,10 +51,10 @@ const babelOpts = {
 };
 
 const esbuildOpts = {
-    target: esbuildBrowserlist(),
+    target: compatibility.targets,
     minify: isProd,
     outdir: 'public',
-    splitting: true,
+    splitting: false,
     loader: {
         '.ttf': 'dataurl',
         '.png': 'dataurl',
@@ -83,6 +93,12 @@ await esbuild.build({
         {
             name: 'static-asset-map',
             setup(build) {
+                build.onResolve({ filter: /^#browser-polyfills$/ }, () => ({ path: '#browser-polyfills', namespace: 'browser-polyfills' }));
+                build.onLoad({ filter: /.*/, namespace: 'browser-polyfills' }, () => ({
+                    contents: browserPolyfills(compatibility),
+                    resolveDir: process.cwd(),
+                    loader: 'js',
+                }));
                 build.onResolve({ filter: /^#assets$/ }, () => ({ path: '#assets', namespace: 'asset-map' }));
                 build.onLoad({ filter: /.*/, namespace: 'asset-map' }, () => ({
                     contents: 'export default ' + JSON.stringify(assetMap),
@@ -94,10 +110,43 @@ await esbuild.build({
             babelOpts,
         ),
         htmlPlugin({
+            scriptsTarget: compatibility.targets,
+            modulesTarget: compatibility.targets,
             minifyOptions: isProd ? minifyOptions : {},
         }),
     ],
 });
+
+// Process complete bundles, including esbuild-generated wrappers and every
+// dependency. Terser must not reintroduce syntax newer than Babel's output.
+for (const file of await listFiles('public')) {
+    if (file.endsWith('.js')) {
+        const transformed = await transformAsync(await readFile(file, 'utf8'), {
+            filename: file,
+            compact: false,
+            configFile: false,
+            babelrc: false,
+            presets: [['@babel/preset-env', {
+                targets: compatibility.browsers, bugfixes: true,
+                modules: false, useBuiltIns: false,
+            }]],
+        });
+        const code = isProd ? (await minify(transformed.code, {
+            ecma: 5, compress: { ecma: 5 }, format: { ecma: 5, comments: false },
+        })).code : transformed.code;
+        auditBundle(code, compatibility);
+        await writeFile(file, code);
+    } else if (file.endsWith('.css')) {
+        const result = await postcss([presetEnv({
+            browsers: compatibility.browsers,
+            stage: 2,
+            preserve: true,
+            features: { 'custom-properties': false },
+            autoprefixer: { grid: 'autoplace' },
+        })]).process(await readFile(file, 'utf8'), { from: file, map: false });
+        await writeFile(file, result.css);
+    }
+}
 
 // Hash final output bytes, resolving referenced assets before hashing their parent.
 const outputs = new Map(await Promise.all((await listFiles('public')).map(async file => [

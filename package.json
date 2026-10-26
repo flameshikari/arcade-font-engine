@@ -9,7 +9,9 @@
     "build:dev": "bun run check:compat && bun run clear && bun run copy && NODE_ENV=development bun client/index.js",
     "build:prod": "bun run check:compat && bun run clear && bun run copy && NODE_ENV=production bun client/index.js",
     "start": "nodemon --exec 'bun run build:dev'",
-    "check:compat": "bun --bun run eslint client/scripts --max-warnings 0"
+    "check:compat": "bun build/check-compatibility.js && bun --bun run eslint client/scripts --max-warnings 0 && bun run test:compat",
+    "test:compat": "bun test tests/compatibility.test.js",
+    "test:browser": "playwright test"
   },
   "imports": {
     "#root": "."
@@ -30,20 +32,33 @@
     "not dead"
   ],
   "devDependencies": {
+    "@babel/core": "^7",
+    "@babel/parser": "^7",
+    "@babel/preset-env": "^7",
+    "@babel/traverse": "^7",
     "@chialab/esbuild-plugin-babel": "^0.19.1",
     "@chialab/esbuild-plugin-html": "^0.19.1",
+    "@playwright/test": "^1.64.1",
     "bigger-picture": "1.1.20",
+    "browserslist": "^4.29.4",
     "browserslist-to-esbuild": "^2.1.1",
+    "caniuse-lite": "^1.0.30001819",
     "core-js": "^3.51.0",
+    "core-js-compat": "^3.51.0",
+    "dom4": "^2.1.6",
     "esbuild": "^0.28.2",
     "eslint": "^10.13.0",
     "eslint-plugin-compat": "^7.0.2",
     "htmlnano": "^3.6.1",
-    "jquery": "^4.0.0",
+    "jquery": "^3.7.1",
     "jquery-ui": "^1.14.2",
     "nodemon": "^3.1.14",
+    "pepjs": "^0.5.3",
+    "postcss": "^8.5.31",
+    "postcss-preset-env": "^11.6.1",
     "rcpy": "^1.0.2",
     "relateurl": "^0.2.7",
+    "resize-observer-polyfill": "^1.5.1",
     "srcset": "^5.0.3",
     "terser": "^5.51.2"
   },

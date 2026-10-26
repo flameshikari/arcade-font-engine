@@ -120,6 +120,8 @@ export function initGlyphGallery(previews, getOptions, getOutputOptions) {
             },
             onOpen: (container, item) => {
                 viewedItem = item;
+                // PEP uses this attribute to enable touch dragging on older iOS.
+                container.setAttribute('touch-action', 'none');
                 document.body.classList.add('glyph-gallery-open');
                 setBackdrop(container.firstElementChild, true);
                 setActiveSource(container, item, true);
