@@ -35,7 +35,7 @@ Available for Linux, macOS and Windows for amd64 and arm64. Download a prebuilt 
 
 ### Build
 
-Requires [Bun](https://bun.sh/) and [Go](https://go.dev/) 1.24+.
+Requires [Bun](https://bun.sh/) and [Go](https://go.dev/) 1.27.3+.
 
 ```sh
 bun install && bun run build:prod
@@ -79,7 +79,7 @@ Render text by constructing a URL with path-based parameters (as in the original
 | `y` | Font name | `y-arcade` |
 | `z` | Style/color index (0-based) | `z-0` |
 | `x` | Text to render | `x-HELLO` |
-| `dbl` | Scale factor (1-6) | `dbl-3` |
+| `dbl` | Scale factor (1-9) | `dbl-3` |
 | `f` | Output format (`svg` or `png`) | `f-svg` |
 | `b` | Bubble direction (`u` = up, `d` = down) | `b-d` |
 | `bp` | Bubble pointer position (0-100) | `bp-25` |
@@ -114,3 +114,48 @@ Render text by constructing a URL with path-based parameters (as in the original
 | `Ctrl + F` | Focus input |
 | `Ctrl + L` | Clear input |
 | `Esc` | Unfocus input |
+
+
+### Browser compatibility checks
+
+Both frontend build commands run `bun run check:compat` against the Browserslist
+configuration in `package.json`. Unsupported Web APIs detected by
+`eslint-plugin-compat` fail the build. Babel applies syntax transforms and
+usage-based core-js polyfills in development and production builds.
+
+This static check does not verify CSS, third-party dependencies, or every
+instance method. Browser testing is still required for full compatibility.
+
+### Resource limits and caching
+
+The API accepts up to 100 printable ASCII characters and scale factors up to 9.
+The browser applies the same text limit before rendering or restoring a session.
+Images are limited to 4 million pixels after scaling and bubble padding, with
+at most four concurrent API renders. Requests exceeding these limits return
+`400`; a busy renderer returns `503` with `Retry-After: 1`.
+
+The disk cache stores at most 64 MiB and 1024 images, expires entries after
+24 hours, and evicts the oldest entries when full. Writes use atomic replacement.
+Keys include all rendering parameters and the application version; random font
+or color requests bypass the cache. Recognized legacy cache files are removed
+on startup. Unrelated files in a custom cache directory are left untouched.
+Use a separate cache directory for each server process.
+
+Hashed static assets are cached for one year with `immutable`; HTML is
+revalidated, and API responses are marked `no-store`. The server sets CSP,
+anti-framing, MIME-sniffing, referrer and permissions headers. Inline styles
+remain allowed because the sliders and pixel animations set styles dynamically;
+inline JavaScript is blocked.
+
+Frontend renders and decoded previews use bounded in-memory caches. Build with
+`bun install --frozen-lockfile`; commit `bun.lock` and `server/go.sum` when
+updating dependencies. Docker base images are pinned by digest and Actions by
+commit SHA, so dependency updates must also update those pins.
+
+Server checks:
+
+```sh
+cd server
+go test -race ./...
+go vet ./...
+```
