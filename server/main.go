@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"embed"
+	"encoding/json"
 	"flag"
 	"fmt"
-	"hash/fnv"
 	"image"
 	"image/color"
 	"image/draw"
@@ -14,7 +16,6 @@ import (
 	"math/rand/v2"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -23,20 +24,21 @@ import (
 	"sync"
 	"time"
 
+	"github.com/NYTimes/gziphandler"
 	xdraw "golang.org/x/image/draw"
 )
 
 //go:embed all:public
 var embeddedFS embed.FS
 
-var version = "dev"
+var version = "1.1.0"
 
 const (
 	defaultCharWidth  = 8
 	defaultCharHeight = 8
 	charOffset        = 32
 	stringLimit       = 100
-	maxScale          = 6
+	maxScale          = 9
 )
 
 // fontCache holds preloaded font images to avoid repeated PNG decoding.
@@ -65,12 +67,18 @@ func (fc *fontCache) set(key string, img *image.RGBA) {
 // server holds all shared state for request handling.
 type server struct {
 	contentFS fs.FS
+	assets    map[string]string
 	cacheDir  string
 	noCache   bool
 	fc        *fontCache
+	renders   chan struct{}
+	disk      *diskCache
 }
 
 func (s *server) loadPNG(path string) (image.Image, error) {
+	if renamed, ok := s.assets[path]; ok {
+		path = renamed
+	}
 	f, err := s.contentFS.Open(path)
 	if err != nil {
 		return nil, err
@@ -93,6 +101,19 @@ func (s *server) loadFont(path string) (*image.RGBA, error) {
 }
 
 func (s *server) listFontFiles(dir string) ([]string, error) {
+	if s.assets != nil {
+		var files []string
+		for original := range s.assets {
+			if filepath.ToSlash(filepath.Dir(original)) == dir && strings.HasSuffix(strings.ToLower(original), ".png") {
+				files = append(files, filepath.Base(original))
+			}
+		}
+		sort.Strings(files)
+		if len(files) == 0 {
+			return nil, fmt.Errorf("font directory not found: %s", dir)
+		}
+		return files, nil
+	}
 	entries, err := fs.ReadDir(s.contentFS, dir)
 	if err != nil {
 		return nil, err
@@ -108,17 +129,14 @@ func (s *server) listFontFiles(dir string) ([]string, error) {
 }
 
 func (s *server) findFontFile(dir, fontChoice string) (string, error) {
-	entries, err := fs.ReadDir(s.contentFS, dir)
+	files, err := s.listFontFiles(dir)
 	if err != nil {
 		return "", err
 	}
-	for _, e := range entries {
-		if e.IsDir() {
-			continue
-		}
-		prefix, _, _ := strings.Cut(e.Name(), ".")
+	for _, name := range files {
+		prefix, _, _ := strings.Cut(name, ".")
 		if prefix == fontChoice {
-			return dir + "/" + e.Name(), nil
+			return dir + "/" + name, nil
 		}
 	}
 	return "", fmt.Errorf("font not found: %s", fontChoice)
@@ -163,7 +181,7 @@ func parsePathParams(path string) map[string]string {
 	return out
 }
 
-func extractParams(r *http.Request) apiParams {
+func extractParams(r *http.Request) (apiParams, error) {
 	p := apiParams{
 		text:        "NULL",
 		font:        "taitoa",
@@ -184,13 +202,37 @@ func extractParams(r *http.Request) apiParams {
 			return v, ok
 		}
 	} else {
+		query := r.URL.Query()
 		get = func(key string) (string, bool) {
-			v := r.URL.Query().Get(key)
+			v := query.Get(key)
 			if v == "" {
-				_, exists := r.URL.Query()[key]
+				_, exists := query[key]
 				return v, exists
 			}
 			return v, true
+		}
+	}
+
+	// Reject malformed numbers instead of silently rendering with zero values.
+	for _, key := range []string{"z", "dbl", "w", "h", "bp"} {
+		if value, ok := get(key); ok {
+			if key == "z" && value == "r" {
+				continue
+			}
+			if _, err := strconv.Atoi(value); err != nil {
+				return p, fmt.Errorf("invalid parameter: %s", key)
+			}
+		}
+	}
+	if value, ok := get("cs"); ok {
+		parts := strings.Split(value, ".")
+		if len(parts) != 3 {
+			return p, fmt.Errorf("invalid color shift")
+		}
+		for _, part := range parts {
+			if _, err := strconv.Atoi(part); err != nil {
+				return p, fmt.Errorf("invalid color shift")
+			}
 		}
 	}
 
@@ -263,7 +305,7 @@ func extractParams(r *http.Request) apiParams {
 		p.outputFmt = "png"
 	}
 
-	return p
+	return p, nil
 }
 
 func sanitizeText(s string) string {
@@ -281,12 +323,6 @@ func sanitizeText(s string) string {
 		result = "Arcade Font Engine"
 	}
 	return result
-}
-
-func hashString(s string) string {
-	h := fnv.New64a()
-	h.Write([]byte(url.QueryEscape(s)))
-	return fmt.Sprintf("%016x", h.Sum64())
 }
 
 func toRGBA(src image.Image) *image.RGBA {
@@ -398,7 +434,7 @@ func shortHex(r, g, b uint8) string {
 
 type svgRect struct {
 	x, y, w, h int
-	opacity     string
+	opacity    string
 }
 
 func rgbaToSVG(img *image.RGBA, pixelSize int) []byte {
@@ -536,8 +572,37 @@ func (s *server) applyBubble(img *image.RGBA, p apiParams) *image.RGBA {
 }
 
 func (s *server) handleAPI(w http.ResponseWriter, r *http.Request) {
-	p := extractParams(r)
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		w.Header().Set("Allow", "GET, HEAD")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if len(r.URL.RequestURI()) > 16384 {
+		http.Error(w, "URI too long", http.StatusRequestURITooLong)
+		return
+	}
+	p, err := extractParams(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	p.text = sanitizeText(p.text)
+	if p.charWidth < 1 || p.charWidth > 64 || p.charHeight < 1 || p.charHeight > 64 ||
+		p.charColor < 0 || p.bubblePos < 0 || p.bubblePos > 100 ||
+		(p.hasBubble && p.bubble != "u" && p.bubble != "d") {
+		http.Error(w, "invalid rendering parameters", http.StatusBadRequest)
+		return
+	}
+	for _, shift := range p.colorShift {
+		if shift < -255 || shift > 255 {
+			http.Error(w, "invalid color shift", http.StatusBadRequest)
+			return
+		}
+	}
+
+	if r.Context().Err() != nil {
+		return
+	}
 
 	fontDir := "images/fonts"
 	if p.useLargeDir {
@@ -550,30 +615,6 @@ func (s *server) handleAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	numFonts := len(fontFiles)
-
-	// Check disk cache
-	var cacheFile string
-	if !s.noCache && s.cacheDir != "" && (!p.listFonts || !p.countFonts) {
-		h := hashString(p.text)
-		bubblePart := ""
-		if p.hasBubble {
-			bubblePart = fmt.Sprintf("%s%d%s-", p.bubble, p.bubblePos, p.bubbleTheme)
-		}
-		scalePart := strconv.Itoa(p.scale)
-		ext := ".png"
-		contentType := "image/png"
-		if p.outputFmt == "svg" {
-			ext = ".svg"
-			contentType = "image/svg+xml"
-		}
-		cacheFile = filepath.Join(s.cacheDir, fmt.Sprintf("%s-%d-%s-%s%s%s", p.font, p.charColor, scalePart, bubblePart, h, ext))
-		if data, err := os.ReadFile(cacheFile); err == nil {
-			w.Header().Set("Content-Type", contentType)
-			w.Header().Set("X-Cache", "HIT")
-			w.Write(data)
-			return
-		}
-	}
 
 	if p.countFonts {
 		p.text = strconv.Itoa(numFonts)
@@ -592,6 +633,36 @@ func (s *server) handleAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	srcImg, err := s.loadFont(fontFilePath)
+	if err != nil {
+		http.Error(w, "cannot load font image", http.StatusInternalServerError)
+		return
+	}
+	if !p.randomColor && p.charColor >= srcImg.Bounds().Dy()/p.charHeight {
+		http.Error(w, "invalid style", http.StatusBadRequest)
+		return
+	}
+	cacheFile := ""
+	if !s.noCache && s.disk != nil && !p.randomFont && !p.randomColor {
+		digest := sha256.Sum256([]byte(fmt.Sprintf("%s:%#v", version, p)))
+		cacheFile = fmt.Sprintf("v2-%x.%s", digest, p.outputFmt)
+		if data, ok := s.disk.read(cacheFile); ok {
+			w.Header().Set("Content-Type", imageContentType(p.outputFmt))
+			w.Header().Set("X-Cache", "HIT")
+			w.Write(data)
+			return
+		}
+	}
+	if s.renders != nil {
+		select {
+		case s.renders <- struct{}{}:
+			defer func() { <-s.renders }()
+		default:
+			w.Header().Set("Retry-After", "1")
+			http.Error(w, "renderer busy", http.StatusServiceUnavailable)
+			return
+		}
+	}
 	// Random color
 	if p.randomColor {
 		srcImg, err := s.loadFont(fontFilePath)
@@ -608,7 +679,10 @@ func (s *server) handleAPI(w http.ResponseWriter, r *http.Request) {
 	if p.listFonts {
 		maxLen := 0
 		for _, f := range fontFiles {
-			_, name, _ := strings.Cut(f, "-")
+			_, name, found := strings.Cut(f, "-")
+			if !found {
+				name = f
+			}
 			name = strings.TrimSuffix(name, ".png")
 			if len(name) > maxLen {
 				maxLen = len(name)
@@ -620,7 +694,15 @@ func (s *server) handleAPI(w http.ResponseWriter, r *http.Request) {
 		imgW = p.charWidth * len(p.text)
 		imgH = p.charHeight
 	}
-	if imgW <= 0 || imgH <= 0 {
+	// Include bubble padding and scale before allocating any output image.
+	finalW, finalH := int64(imgW), int64(imgH)
+	if p.hasBubble {
+		finalW += 12
+		finalH += 16
+	}
+	finalW *= int64(p.scale)
+	finalH *= int64(p.scale)
+	if imgW <= 0 || imgH <= 0 || finalW > 32768 || finalH > 32768 || finalW*finalH > 4_000_000 {
 		http.Error(w, "invalid dimensions", http.StatusBadRequest)
 		return
 	}
@@ -658,37 +740,32 @@ func (s *server) handleAPI(w http.ResponseWriter, r *http.Request) {
 		out = s.applyBubble(out, p)
 	}
 
-	if p.outputFmt == "svg" {
-		pixelSize := p.scale
-		if pixelSize < 1 {
-			pixelSize = 1
-		}
-		svgData := rgbaToSVG(out, pixelSize)
-		w.Header().Set("Content-Type", "image/svg+xml")
-		if cacheFile != "" {
-			w.Header().Set("X-Cache", "MISS")
-			os.WriteFile(cacheFile, svgData, 0o644)
-		}
-		w.Write(svgData)
+	if r.Context().Err() != nil {
 		return
 	}
-
-	if p.scale > 1 {
-		out = scaleNearest(out, p.scale)
+	var data []byte
+	if p.outputFmt == "svg" {
+		data = rgbaToSVG(out, p.scale)
+	} else {
+		if p.scale > 1 {
+			out = scaleNearest(out, p.scale)
+		}
+		var buf bytes.Buffer
+		enc := png.Encoder{CompressionLevel: png.DefaultCompression}
+		if err := enc.Encode(&buf, toPaletted(out)); err != nil {
+			http.Error(w, "cannot encode image", http.StatusInternalServerError)
+			return
+		}
+		data = buf.Bytes()
 	}
-
-	// Write to cache and response
-	enc := &png.Encoder{CompressionLevel: png.BestCompression}
-	pImg := toPaletted(out)
-	w.Header().Set("Content-Type", "image/png")
 	if cacheFile != "" {
 		w.Header().Set("X-Cache", "MISS")
-		if f, err := os.Create(cacheFile); err == nil {
-			enc.Encode(f, pImg)
-			f.Close()
+		if err := s.disk.write(cacheFile, data); err != nil {
+			log.Printf("cache write: %v", err)
 		}
 	}
-	enc.Encode(w, pImg)
+	w.Header().Set("Content-Type", imageContentType(p.outputFmt))
+	w.Write(data)
 }
 
 // loggingMiddleware logs each request with method, path, status, and duration.
@@ -710,7 +787,6 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.status = code
 	rw.ResponseWriter.WriteHeader(code)
 }
-
 
 func usage() {
 	fmt.Fprintf(os.Stderr, `Usage: %s [OPTIONS]
@@ -792,6 +868,18 @@ func main() {
 		cacheDir:  resolvedCacheDir,
 		noCache:   noCache,
 		fc:        newFontCache(),
+		renders:   make(chan struct{}, 4),
+	}
+
+	if !noCache {
+		srv.disk = newDiskCache(resolvedCacheDir)
+	}
+	if data, err := fs.ReadFile(contentFS, "asset-manifest.json"); err == nil {
+		if err := json.Unmarshal(data, &srv.assets); err != nil {
+			log.Fatalf("Invalid asset manifest: %v", err)
+		}
+	} else if !os.IsNotExist(err) {
+		log.Fatal(err)
 	}
 
 	mux := http.NewServeMux()
@@ -823,7 +911,24 @@ func main() {
 	} else {
 		log.Printf("  http://%s:%s", host, listenPort)
 	}
-	if err := http.Serve(ln, loggingMiddleware(mux)); err != nil {
+	compress, err := gziphandler.GzipHandlerWithOpts(
+		gziphandler.ContentTypes([]string{
+			"text/html", "text/css", "text/javascript", "application/javascript",
+			"application/json", "text/plain", "image/svg+xml",
+		}),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	httpServer := &http.Server{
+		Handler:           loggingMiddleware(securityHeaders(compress(mux))),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    16 << 10,
+	}
+	if err := httpServer.Serve(ln); err != nil {
 		log.Fatal(err)
 	}
 }
