@@ -70,116 +70,121 @@ export function initGlyphGallery(previews, getOptions, getOutputOptions) {
 
     const open = async (image, sources = images, options = getOptions(), wheel) => {
         const current = ++request;
-        const loadedImages = new Map();
-        const origins = new Map(sources.map(element => {
-            const sibling = element.previousElementSibling;
-            const source = sibling?.classList.contains('output-transition') ? sibling : element;
-            const rect = source.getBoundingClientRect();
-            return [element, { left: rect.left, top: rect.top, width: rect.width, height: rect.height }];
-        }));
-        const items = await Promise.all(sources.map(async element => {
-            const src = await render({ ...options, text: previews[element.id] || options.text });
-            const loaded = await loadImage(src);
-            loadedImages.set(src, loaded);
-            return {
-                img: src,
-                thumb: src,
-                element,
-                width: loaded.naturalWidth,
-                height: loaded.naturalHeight,
-                alt: element.alt,
-                caption: element.id === 'output' ? options.text.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character])) : element.alt,
-                upscale: 8,
-                pixelSize: options.size,
-                origin: wheel && element === image ? wheel.origin : origins.get(element),
-            };
-        }));
-        if (current !== request) return;
-        if (!viewer) {
-            const target = document.createElement('div');
-            target.className = 'glyph-gallery';
-            document.body.append(target);
-            viewer = BiggerPicture({ target });
+        document.body.classList.add('glyph-gallery-opening');
+        try {
+            const loadedImages = new Map();
+            const origins = new Map(sources.map(element => {
+                const sibling = element.previousElementSibling;
+                const source = sibling?.classList.contains('output-transition') ? sibling : element;
+                const rect = source.getBoundingClientRect();
+                return [element, { left: rect.left, top: rect.top, width: rect.width, height: rect.height }];
+            }));
+            const items = await Promise.all(sources.map(async element => {
+                const src = await render({ ...options, text: previews[element.id] || options.text });
+                const loaded = await loadImage(src);
+                loadedImages.set(src, loaded);
+                return {
+                    img: src,
+                    thumb: src,
+                    element,
+                    width: loaded.naturalWidth,
+                    height: loaded.naturalHeight,
+                    alt: element.alt,
+                    caption: element.id === 'output' ? options.text.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character])) : element.alt,
+                    upscale: 8,
+                    pixelSize: options.size,
+                    origin: origins.get(element),
+                };
+            }));
+            if (current !== request) return;
+            if (!viewer) {
+                const target = document.createElement('div');
+                target.className = 'glyph-gallery';
+                document.body.append(target);
+                viewer = BiggerPicture({ target });
+            }
+            let baseArmedAt = performance.now();
+            let lastWheelAt = 0;
+            let viewedItem;
+            viewer.open({
+                items,
+                position: sources.indexOf(image),
+                clickZoom: 2,
+                maxZoom: 8,
+                zoomDuration: transitionDuration,
+                transitionDuration: 0,
+                intro: 'pixels',
+                freePan: true,
+                captionTransition: captionMosaic,
+                mediaTransition: (node, entering, transferring) => {
+                    if (entering && transferring) return { duration: 0, tick() {} };
+                    return mediaMosaic(node, entering, loadedImages, transferring ? items : undefined);
+                },
+                onOpen: (container, item) => {
+                    viewedItem = item;
+                    // PEP uses this attribute to enable touch dragging on older iOS.
+                    container.setAttribute('touch-action', 'none');
+                    document.body.classList.add('glyph-gallery-open');
+                    setBackdrop(container.firstElementChild, true);
+                    setActiveSource(container, item, true);
+                    colorPicker?.destroy();
+                    colorPicker = createColorPicker(container, loadedImages);
+                    colorPicker.setItem(item);
+                    if (wheel) {
+                        baseArmedAt = null;
+                        lastWheelAt = performance.now();
+                        requestAnimationFrame(() => {
+                            item.zoomBy(Math.max(0.1, Math.min(1, -wheel.deltaY / 300)), wheel);
+                        });
+                    }
+                    for (const [selector, text] of [['.bp-prev', '‹'], ['.bp-next', '›'], ['.bp-x', '×']]) {
+                        const button = container.querySelector(selector);
+                        if (button) button.textContent = text;
+                    }
+                    interfaceProgress = 0;
+                    animateInterface(container, true);
+                },
+                onWheel: (event, item) => {
+                    const now = performance.now();
+                    const gap = now - lastWheelAt;
+                    lastWheelAt = now;
+                    if (event.deltaY < 0) { baseArmedAt = null; return false; }
+                    if (event.deltaY <= 0) return false;
+                    const ratio = item.zoomRatio;
+                    if (ratio <= 1.01) {
+                        if (baseArmedAt === null) baseArmedAt = now;
+                        else if (now - baseArmedAt >= 250 && gap >= 180) viewer.close();
+                        return true;
+                    }
+                    if (ratio * (1 - event.deltaY / 300) <= 1.01 && baseArmedAt === null) baseArmedAt = now;
+                    return false;
+                },
+                onUpdate: (container, item) => {
+                    const rect = viewedItem?.viewRect;
+                    if (viewedItem !== item && rect) {
+                        item.initialViewRect = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+                    }
+                    viewedItem = item;
+                    baseArmedAt = performance.now();
+                    lastWheelAt = 0;
+                    setActiveSource(container, item);
+                    colorPicker?.setItem(item);
+                },
+                onClose: container => {
+                    animateInterface(container, false);
+                    setBackdrop(container.firstElementChild, false);
+                },
+                onClosed: () => {
+                    cancelAnimationFrame(interfaceFrame);
+                    colorPicker?.destroy();
+                    colorPicker = undefined;
+                    restoreSource(false);
+                    document.body.classList.remove('glyph-gallery-open');
+                },
+            });
+        } finally {
+            if (current === request) document.body.classList.remove('glyph-gallery-opening');
         }
-        let baseArmedAt = performance.now();
-        let lastWheelAt = 0;
-        let viewedItem;
-        viewer.open({
-            items,
-            position: sources.indexOf(image),
-            clickZoom: 2,
-            maxZoom: 8,
-            zoomDuration: transitionDuration,
-            transitionDuration: 0,
-            intro: 'pixels',
-            freePan: true,
-            captionTransition: captionMosaic,
-            mediaTransition: (node, entering, transferring) => {
-                if (entering && transferring) return { duration: 0, tick() {} };
-                return mediaMosaic(node, entering, loadedImages, transferring ? items : undefined);
-            },
-            onOpen: (container, item) => {
-                viewedItem = item;
-                // PEP uses this attribute to enable touch dragging on older iOS.
-                container.setAttribute('touch-action', 'none');
-                document.body.classList.add('glyph-gallery-open');
-                setBackdrop(container.firstElementChild, true);
-                setActiveSource(container, item, true);
-                colorPicker?.destroy();
-                colorPicker = createColorPicker(container, loadedImages);
-                colorPicker.setItem(item);
-                if (wheel) {
-                    baseArmedAt = null;
-                    lastWheelAt = performance.now();
-                    requestAnimationFrame(() => {
-                        item.zoomBy(Math.max(0.1, Math.min(1, -wheel.deltaY / 300)), wheel);
-                    });
-                }
-                for (const [selector, text] of [['.bp-prev', '‹'], ['.bp-next', '›'], ['.bp-x', '×']]) {
-                    const button = container.querySelector(selector);
-                    if (button) button.textContent = text;
-                }
-                interfaceProgress = 0;
-                animateInterface(container, true);
-            },
-            onWheel: (event, item) => {
-                const now = performance.now();
-                const gap = now - lastWheelAt;
-                lastWheelAt = now;
-                if (event.deltaY < 0) { baseArmedAt = null; return false; }
-                if (event.deltaY <= 0) return false;
-                const ratio = item.zoomRatio;
-                if (ratio <= 1.01) {
-                    if (baseArmedAt === null) baseArmedAt = now;
-                    else if (now - baseArmedAt >= 250 && gap >= 180) viewer.close();
-                    return true;
-                }
-                if (ratio * (1 - event.deltaY / 300) <= 1.01 && baseArmedAt === null) baseArmedAt = now;
-                return false;
-            },
-            onUpdate: (container, item) => {
-                const rect = viewedItem?.viewRect;
-                if (viewedItem !== item && rect) {
-                    item.initialViewRect = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
-                }
-                viewedItem = item;
-                baseArmedAt = performance.now();
-                lastWheelAt = 0;
-                setActiveSource(container, item);
-                colorPicker?.setItem(item);
-            },
-            onClose: container => {
-                animateInterface(container, false);
-                setBackdrop(container.firstElementChild, false);
-            },
-            onClosed: () => {
-                cancelAnimationFrame(interfaceFrame);
-                colorPicker?.destroy();
-                colorPicker = undefined;
-                restoreSource(false);
-                document.body.classList.remove('glyph-gallery-open');
-            },
-        });
     };
     let wheelOpening = false;
     const wheelOpen = async (event, image, sources, options) => {
@@ -187,15 +192,11 @@ export function initGlyphGallery(previews, getOptions, getOutputOptions) {
         event.preventDefault();
         if (wheelOpening) return;
         wheelOpening = true;
-        const sibling = image.previousElementSibling;
-        const source = sibling?.classList.contains('output-transition') ? sibling : image;
-        const rect = source.getBoundingClientRect();
         try {
             await open(image, sources, options, {
                 deltaY: event.deltaY,
                 clientX: event.clientX,
                 clientY: event.clientY,
-                origin: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },
             });
         } finally {
             wheelOpening = false;

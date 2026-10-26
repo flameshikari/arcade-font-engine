@@ -953,3 +953,12 @@ legend span.littleshake {
 	opacity: 1 !important;
 	transition: none;
 }
+
+/* Capture and keep previews at their resting position throughout viewing. */
+.glyph-gallery-opening #glyphs .littleshake,
+.glyph-gallery-opening #blank .littleshake,
+.glyph-gallery-open #glyphs .littleshake,
+.glyph-gallery-open #blank .littleshake {
+	animation: none !important;
+	transform: none !important;
+}
