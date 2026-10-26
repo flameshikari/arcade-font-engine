@@ -1,8 +1,15 @@
 window.$ = window.jQuery = require('jquery');
-require('jquery-ui-dist/jquery-ui');
+require('jquery-ui/dist/jquery-ui');
 import fonts from './fonts.js';
 import title from '../images/title.png';
-import { render, getFontImage } from './renderer.js';
+import { normalizeText, textLimit, render, getFontImage } from './renderer.js';
+import { transitionOutput } from './output-transition.js';
+import { randomizeBackground } from './background.js';
+import { initGlyphGallery } from './glyph-gallery.js';
+import { readSessionState, writeSessionState, clearSessionState } from './session-state.js';
+import { revealMenu, concealMenu } from './menu-transition.js';
+import { setBackdrop } from './backdrop-transition.js';
+import { setTooltip } from './tooltip-transition.js';
 
 const endpoint = '/api';
 
@@ -20,10 +27,28 @@ const indexes = Object.values(fonts);
 const fontKeys = Object.keys(fonts);
 const fontTotal = fontKeys.length;
 
+const savedState = readSessionState(fonts);
 const preset = {
-    size: 3,
-    bubble: 25,
-    font: 'arcade',
+    size: savedState.size,
+    bubble: savedState.bubblePosition,
+    font: savedState.font,
+};
+let logoSelection = savedState.logo;
+let sessionReady = false;
+
+const saveSession = () => {
+    if (!sessionReady) return;
+    writeSessionState({
+        font: $('#fonts').val(),
+        style: Number($('#style').val()),
+        size: $('#size').slider('value'),
+        bubblePosition: $('#bubble-position').slider('value'),
+        bubble: $('#bubble').is(':checked'),
+        bubbleFlip: $('#bubble-flip').is(':checked'),
+        bubbleTheme: $('#bubble-theme').is(':checked'),
+        text: $('#input').val(),
+        logo: logoSelection,
+    });
 };
 
 const previews = {
@@ -33,8 +58,7 @@ const previews = {
 };
 
 const sanitizeString = () => {
-    const value = $('#input').val();
-    $('#input').val(value.replace(/[\u{0080}-\u{FFFF}]/gu, ''));
+    $('#input').val(normalizeText($('#input').val()));
 };
 
 const createParticle = (x, y, dx, dy) => {
@@ -97,11 +121,11 @@ const blinkHandle = ($slider) => {
     setTimeout(() => handle.css('background', ''), 100);
 };
 
-const shake = () => {
-    const intensity = 1 + 2 * Math.random();
+const littleshake = () => {
+    const intensity = 1;
     const x = intensity * (Math.random() > 0.5 ? -1 : 1);
     const y = intensity * (Math.random() > 0.5 ? -1 : 1);
-    const el = document.getElementById('content');
+    const el = document.querySelector('#content > .grid');
     el.style.transform = `translate(${x}px, ${y}px)`;
     setTimeout(() => { el.style.transform = ''; }, 75);
 };
@@ -147,28 +171,40 @@ const getRenderOpts = (overrides = {}) => {
     };
 };
 
+let outputRequest = 0;
+let glyphRequest = 0;
+let titleRequest = 0;
+
 const updatePreviews = (glyphs = false) => {
-    shake();
+    littleshake();
     if (glyphs) {
+        const request = ++glyphRequest;
         for (const [key, text] of Object.entries(previews)) {
             render(getRenderOpts({ input: text, glyphs: true })).then(src => {
-                $(`#${key}`).attr('src', src);
+                if (request === glyphRequest) transitionOutput(document.getElementById(key), src);
             });
         }
     }
     const opts = getRenderOpts();
-    render(opts).then(src => { $('#output').attr('src', src); });
+    const request = ++outputRequest;
+    render(opts).then(src => {
+        if (request === outputRequest) transitionOutput($('#output')[0], src);
+    });
     const apiUrl = compileUrl();
     $('#blank').attr('href', apiUrl);
     $('#save-png').attr('href', apiUrl);
     $('#save-svg').attr('href', compileUrl({ format: 'svg' }));
+    saveSession();
 };
 
-const updateTitle = () => {
-    const font = fontKeys[Math.floor(Math.random() * fontTotal)];
-    const style = Math.floor(Math.random() * fonts[font].styles);
+const updateTitle = (selection) => {
+    const font = selection?.font || fontKeys[Math.floor(Math.random() * fontTotal)];
+    const style = selection?.style ?? Math.floor(Math.random() * fonts[font].styles);
+    logoSelection = { font, style };
+    saveSession();
+    const request = ++titleRequest;
     render({ text: 'ARCADE FONT ENGINE', font, style, size: 5 }).then(src => {
-        $('#title').attr('src', src);
+        if (request === titleRequest) transitionOutput($('#title')[0], src);
     });
 };
 
@@ -219,7 +255,8 @@ const updateSliderLabel = ($slider, val) => {
 const stepSize = (dir) => {
     const $slider = $('#size');
     const current = $slider.slider('value');
-    const next = ((current - 1 + dir + 6) % 6) + 1;
+    const max = $slider.slider('option', 'max');
+    const next = ((current - 1 + dir + max) % max) + 1;
     $slider.slider('value', next);
     $('#size-legend').html(`X${next}`);
     blinkHandle($slider);
@@ -238,21 +275,21 @@ const stepBubble = (dir) => {
     updatePreviews();
 };
 
-const fontSelected = (ui) => {
+const fontSelected = (ui, selectedStyle = 0) => {
     const font = ui ? ui.item.value : preset.font;
     const index = indexes.indexOf(fonts[font]) + 1;
     const styles = fonts[font].styles;
-    $('#style').val(0);
-    $('#styles-legend').html('A');
+    $('#style').val(selectedStyle);
+    $('#styles-legend').html(String.fromCharCode(65 + selectedStyle));
     $('#styles-legend-total').html(String.fromCharCode(64 + styles));
     $('#dev-legend').html(fonts[font].dev ? `by <span class="legend">${fonts[font].dev}</span>` : '');
     const hasNotes = !!fonts[font].notes;
     $('#notes-popup').html(fonts[font].notes);
     $('#glyphs-legend').toggleClass('no-notes', !hasNotes);
     if (hasNotes && $('#glyphs-legend').is(':hover')) {
-        $('#notes-popup').show();
+        setTooltip(document.getElementById('notes-popup'), true);
     } else {
-        $('#notes-popup').hide();
+        setTooltip(document.getElementById('notes-popup'), false);
     }
 
     const wraps = [];
@@ -261,7 +298,7 @@ const fontSelected = (ui) => {
         const letter = previews.uppercase.charAt(i);
         const $img = $('<img>');
         const $wrap = $('<span>', {
-            class: 'shake pointer style style-wrap',
+            class: 'littleshake pointer style style-wrap',
             value: i,
             click: (e) => {
                 const $el = $(e.currentTarget);
@@ -280,7 +317,7 @@ const fontSelected = (ui) => {
     Promise.all(renderPromises).then(() => {
         const $styles = $('#styles').empty().scrollLeft(0);
         wraps.forEach($w => $styles.append($w));
-        $styles.find('.style').first().addClass('style-selected');
+        $styles.find('.style').eq(selectedStyle).addClass('style-selected');
     });
     $('#style-prev, #style-next').toggleClass('glyph-disabled', styles <= 1);
     $('#font-legend').html(index);
@@ -306,15 +343,16 @@ const leet = () => {
 };
 
 document.addEventListener('keydown', (event) => {
+    if (document.body.classList.contains('glyph-gallery-open')) return;
     if (event.ctrlKey) {
         switch (event.code) {
             case 'KeyF': {
                 event.preventDefault();
                 const $input = $('#input');
                 if ($input.is(':focus')) {
-                    $input.blur();
+                    $input.trigger('blur');
                 } else {
-                    $input.focus();
+                    $input.trigger('focus');
                     const el = $input[0];
                     el.setSelectionRange(el.value.length, el.value.length);
                 }
@@ -331,7 +369,7 @@ document.addEventListener('keydown', (event) => {
                     $('#fonts').selectmenu('close');
                 } else {
                     $('#fonts').selectmenu('open');
-                    $('.ui-selectmenu-button').focus();
+                    $('.ui-selectmenu-button').trigger('focus');
                 }
                 break;
             }
@@ -360,7 +398,7 @@ document.addEventListener('keydown', (event) => {
                 break;
             case '\\':
                 event.preventDefault();
-                $('#bubble').click();
+                $('#bubble').trigger('click');
                 break;
             case '[':
             case ']':
@@ -371,38 +409,49 @@ document.addEventListener('keydown', (event) => {
             case "'":
                 if (!$('#bubble').is(':checked')) break;
                 event.preventDefault();
-                $('#bubble-flip').click();
+                $('#bubble-flip').trigger('click');
                 break;
             case ';':
                 if (!$('#bubble').is(':checked')) break;
                 event.preventDefault();
-                $('#bubble-theme').click();
+                $('#bubble-theme').trigger('click');
                 break;
         }
     }
     if (event.key === 'Escape') {
         if ($('#fonts').selectmenu('menuWidget').is(':visible')) $('#fonts').selectmenu('close');
-        $('#input').blur();
+        $('#input').trigger('blur');
     }
 });
 
 window.onload = () => {
+    document.addEventListener('dragstart', event => event.preventDefault());
+    document.addEventListener('drop', event => event.preventDefault());
     $('body').append('<div id="dropdown-overlay"></div>');
     leet();
+    randomizeBackground();
+    initGlyphGallery(previews, () => getRenderOpts({ glyphs: true }), () => getRenderOpts());
     $('#title').attr('src', title);
+    if (logoSelection) updateTitle(logoSelection);
+    $('#input').attr('maxlength', textLimit).val(savedState.text);
+    sanitizeString();
+    window.addEventListener('pagehide', saveSession);
+    $('#reset').on('click', () => {
+        sessionReady = false;
+        clearSessionState();
+        window.location.reload();
+    });
 
 
-    $('#bubble, #bubble-flip, #bubble-theme').click(() => updatePreviews());
-    $('#bubble').change(() => {
+    $('#bubble, #bubble-flip, #bubble-theme').on('click', () => updatePreviews());
+    $('#bubble').on('change', () => {
         const disabled = !$('#bubble').is(':checked');
         $('.bubble-toggle, .bubble-slider').toggleClass('disabled', disabled);
         $('#bubble-legend').css('color', disabled ? '#222' : '');
     });
 
-    $('#title').click(() => {
-        shake();
-        $('#title').css('filter', 'invert(1)');
-        setTimeout(() => $('#title').css('filter', ''), 100);
+    $('#content').on('click', '#title, .output-transition-title', () => {
+        littleshake();
         updateTitle();
     });
 
@@ -413,7 +462,7 @@ window.onload = () => {
     let marksAdded = false;
     $('#fonts').selectmenu({
         change: (event, ui) => fontSelected(ui),
-        appendTo: '.fonts',
+        appendTo: document.body,
         open: () => {
             const wrapper = $('.ui-selectmenu-menu')[0];
             const menu = wrapper.querySelector('.ui-menu');
@@ -424,27 +473,27 @@ window.onload = () => {
             if (activeLi && items.length) {
                 const index = Array.from(items).indexOf(activeLi);
                 const itemH = items[0].offsetHeight;
-                const visible = 15;
-                const center = 7;
+                const visible = Math.min(items.length, 15, Math.max(1, Math.floor((window.innerHeight - 18) / itemH)));
+                const center = Math.floor(visible / 2);
                 const menuH = visible * itemH;
-                const overscroll = center * itemH;
 
                 menu.style.height = `${menuH}px`;
                 menu.style.maxHeight = `${menuH}px`;
-                menu.style.setProperty('--overscroll', `${overscroll}px`);
-                menu.scrollTop = index * itemH;
+                menu.scrollTop = Math.max(0, index - center) * itemH;
+                const selectedRow = index - menu.scrollTop / itemH;
 
                 if (isMobile) {
-                    wrapper.style.setProperty('top', '50%', 'important');
+                    for (const property of ['top', 'left', 'right', 'width']) wrapper.style.removeProperty(property);
                 } else {
                     const btnRect = document.querySelector('.ui-selectmenu-text').getBoundingClientRect();
-                    const fontsEl = document.querySelector('.fonts');
-                    const cellRect = fontsEl.getBoundingClientRect();
-                    const btnCenterInCell = btnRect.top + btnRect.height / 2 - cellRect.top;
-                    const cellBorder = parseFloat(getComputedStyle(fontsEl).borderTopWidth);
+                    const cellRect = document.querySelector('.fonts').getBoundingClientRect();
                     const menuBorder = parseFloat(getComputedStyle(menu).borderTopWidth);
-                    const top = btnCenterInCell - cellBorder - menuBorder - center * itemH - itemH / 2;
+                    const desiredTop = btnRect.top + btnRect.height / 2 - menuBorder - selectedRow * itemH - itemH / 2;
+                    const top = Math.max(8, Math.min(desiredTop, window.innerHeight - menuH - menuBorder * 2 - 8));
                     wrapper.style.setProperty('top', `${top}px`, 'important');
+                    wrapper.style.setProperty('left', `${cellRect.left}px`, 'important');
+                    wrapper.style.setProperty('right', 'auto', 'important');
+                    wrapper.style.setProperty('width', `${cellRect.width}px`, 'important');
                 }
             }
 
@@ -462,13 +511,15 @@ window.onload = () => {
 
             $('.fonts').addClass('dropdown-open');
             $('.fonts > legend').hide();
-            $('#dropdown-overlay').show();
+            $('#dropdown-overlay').addClass('is-visible');
+            revealMenu(wrapper, () => setBackdrop(document.getElementById('dropdown-overlay'), true));
         },
         close: () => {
             $('.fonts').removeClass('dropdown-open');
             $('.fonts > legend').show();
-            $('#dropdown-overlay').hide();
-            $('.ui-selectmenu-button').blur();
+            $('#dropdown-overlay').removeClass('is-visible');
+            concealMenu($('.ui-selectmenu-menu')[0], () => setBackdrop(document.getElementById('dropdown-overlay'), false));
+            $('.ui-selectmenu-button').trigger('blur');
         },
     });
 
@@ -496,7 +547,7 @@ window.onload = () => {
     $('#size').slider({
         value: preset.size,
         min: 1,
-        max: 6,
+        max: 9,
         step: 1,
         start: (event, ui) => $('#size-legend').html(`X${ui.value}`),
         slide: (event, ui) => $('#size-legend').html(`X${ui.value}`),
@@ -533,38 +584,52 @@ window.onload = () => {
 
     $('.input').on('click', (e) => {
         if ($(e.target).is('#input') || $(e.target).is('#shortcuts-trigger')) return;
-        $('#input').focus();
+        $('#input').trigger('focus');
         const el = $('#input')[0];
         el.setSelectionRange(el.value.length, el.value.length);
     });
 
+    let inputTimer;
+    const applyInput = () => {
+        clearTimeout(inputTimer);
+        sanitizeString();
+        updatePreviews();
+    };
+
     $('#input')
-        .keypress((event) => {
+        .on('keypress', (event) => {
             if (event.repeat) return;
             if (event.which > 127) event.preventDefault();
-            else shake();
+            else littleshake();
             sanitizeString();
         })
-        .on('paste', () => setTimeout(sanitizeString, 0))
-        .change(() => { sanitizeString(); updatePreviews(); })
-        .focus(() => {
+        .on('input', () => {
+            clearTimeout(inputTimer);
+            sanitizeString();
+            saveSession();
+            inputTimer = setTimeout(applyInput, 500);
+        })
+        .on('change', applyInput)
+        .on('focus', () => {
             clearTimeout(placeholderTimer);
             stopBlink();
             $('#input').attr('placeholder', '');
         })
-        .blur(() => {
+        .on('blur', () => {
             placeholderIndex = 0;
             $('#input').attr('placeholder', placeholders[0]);
             startBlink();
             rotatePlaceholder();
         });
 
-    $('#bubble, #bubble-flip, #bubble-theme').prop('checked', false);
+    $('#bubble').prop('checked', savedState.bubble);
+    $('#bubble-flip').prop('checked', savedState.bubbleFlip);
+    $('#bubble-theme').prop('checked', savedState.bubbleTheme);
     $('#bubble').checkboxradio({ icon: false });
     $('#bubble-flip').checkboxradio({ icon: false });
     $('#bubble-theme').checkboxradio({ icon: false });
-    $('.bubble-toggle, .bubble-slider').addClass('disabled');
-    $('#bubble-legend').css('color', '#222');
+    $('.bubble-toggle, .bubble-slider').toggleClass('disabled', !savedState.bubble);
+    $('#bubble-legend').css('color', savedState.bubble ? '' : '#222');
 
     const touchRepeat = ($el, fn) => {
         let timer = null;
@@ -580,14 +645,14 @@ window.onload = () => {
         });
     };
 
-    $('#font-prev').click(() => navigateFont(-1));
-    $('#font-next').click(() => navigateFont(1));
+    $('#font-prev').on('click', () => navigateFont(-1));
+    $('#font-next').on('click', () => navigateFont(1));
     touchRepeat($('#font-prev'), () => navigateFont(-1));
     touchRepeat($('#font-next'), () => navigateFont(1));
 
     const guardStyle = (fn) => () => { if (!$('#style-prev').hasClass('glyph-disabled')) fn(); };
-    $('#style-prev').click(guardStyle(() => cycleStyle(-1)));
-    $('#style-next').click(guardStyle(() => cycleStyle(1)));
+    $('#style-prev').on('click', guardStyle(() => cycleStyle(-1)));
+    $('#style-next').on('click', guardStyle(() => cycleStyle(1)));
     touchRepeat($('#style-prev'), guardStyle(() => cycleStyle(-1)));
     touchRepeat($('#style-next'), guardStyle(() => cycleStyle(1)));
 
@@ -663,30 +728,30 @@ window.onload = () => {
         updatePreviews();
     });
 
-    $('#size-dec').click(() => stepSize(-1));
-    $('#size-inc').click(() => stepSize(1));
+    $('#size-dec').on('click', () => stepSize(-1));
+    $('#size-inc').on('click', () => stepSize(1));
     touchRepeat($('#size-dec'), () => stepSize(-1));
     touchRepeat($('#size-inc'), () => stepSize(1));
-    $('#bubble-dec').click(() => stepBubble(-1));
-    $('#bubble-inc').click(() => stepBubble(1));
+    $('#bubble-dec').on('click', () => stepBubble(-1));
+    $('#bubble-inc').on('click', () => stepBubble(1));
     touchRepeat($('#bubble-dec'), () => stepBubble(-1));
     touchRepeat($('#bubble-inc'), () => stepBubble(1));
 
     let ready = false;
 
     $('#shortcuts-trigger').on('mouseenter', () => {
-        if (ready) $('#shortcuts-popup').show();
+        if (ready) setTooltip(document.getElementById('shortcuts-popup'), true);
     }).on('mouseleave', () => {
-        $('#shortcuts-popup').hide();
+        setTooltip(document.getElementById('shortcuts-popup'), false);
     }).on('mousemove', (e) => {
         $('#shortcuts-popup').css({ left: e.clientX + 12, top: e.clientY + 12 });
     });
 
     const $glyphsLegend = $('#glyphs-legend');
     $glyphsLegend.on('mouseenter', () => {
-        if (ready && !$glyphsLegend.hasClass('no-notes')) $('#notes-popup').show();
+        if (ready && !$glyphsLegend.hasClass('no-notes')) setTooltip(document.getElementById('notes-popup'), true);
     }).on('mouseleave', () => {
-        $('#notes-popup').hide();
+        setTooltip(document.getElementById('notes-popup'), false);
     }).on('mousemove', (e) => {
         if (!$glyphsLegend.hasClass('no-notes')) $('#notes-popup').css({ left: e.clientX + 12, top: e.clientY + 12 });
     });
@@ -707,10 +772,11 @@ window.onload = () => {
             popupLock = true;
             setTimeout(() => popupLock = false, 300);
             if (guard && guard()) return;
-            if ($popup.is(':visible')) { $popup.hide(); return; }
-            $other.hide();
+            if ($popup.is(':visible')) { setTooltip($popup[0], false); return; }
+            setTooltip($other[0], false);
             const rect = $trigger[0].getBoundingClientRect();
-            $popup.css({ left: rect.left, top: rect.bottom + 8 }).show();
+            $popup.css({ left: rect.left, top: rect.bottom + 8 });
+            setTooltip($popup[0], true);
         });
     };
     popupTap($('#shortcuts-trigger'), $('#shortcuts-popup'), $('#notes-popup'));
@@ -739,7 +805,7 @@ window.onload = () => {
             $el.css({ left: origLeft + dx, top: origTop + dy });
         }).on('touchend', (e) => {
             e.stopPropagation();
-            if (!dragged) $el.hide();
+            if (!dragged) setTooltip(el, false);
         });
     });
 
@@ -752,13 +818,14 @@ window.onload = () => {
         docTouchY = null;
         if (dy > 10) return;
         if (!$(e.target).closest('#shortcuts-popup, #notes-popup, #shortcuts-trigger, #glyphs-legend').length) {
-            $('#shortcuts-popup, #notes-popup').hide();
+            $('#shortcuts-popup, #notes-popup').each((_, element) => setTooltip(element, false));
         }
     });
 
     $('#bubble-legend').html(`${preset.bubble}%`);
     $('#size-legend').html(`X${preset.size}`);
-    fontSelected();
+    sessionReady = true;
+    fontSelected(undefined, savedState.style);
     const steps = [0, 0.33, 0.66, 1];
     let step = 0;
     $('#content').css({ visibility: 'visible', opacity: 0 });

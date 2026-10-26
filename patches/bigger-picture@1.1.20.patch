@@ -1,0 +1,710 @@
+diff --git a/dist/bigger-picture.cjs b/dist/bigger-picture.cjs
+index c199ed7c02412b217bd1f0ebbd58375f7bf82ad1..030418e8ea1891eef1cf9140f03cc9f3c15caca9 100644
+--- a/dist/bigger-picture.cjs
++++ b/dist/bigger-picture.cjs
+@@ -1163,7 +1163,9 @@ function instance$3($$self, $$props, $$invalidate) {
+ 	/** if true, adds class to .bp-wrap to avoid image cropping */
+ 	let closingWhileZoomed;
+ 
+-	const naturalWidth = +activeItem.width;
++	const upscale = +activeItem.upscale || 1;
++	const naturalWidth = +activeItem.width * upscale;
++	const naturalHeight = +activeItem.height * upscale;
+ 
+ 	/** store positions for drag inertia */
+ 	const dragPositions = [];
+@@ -1172,17 +1174,25 @@ function instance$3($$self, $$props, $$invalidate) {
+ 	const pointerCache = new Map();
+ 
+ 	/** tween to control image size */
+-	const imageDimensions = tweened(calculatedDimensions, defaultTweenOptions(400));
++	const initialView = activeItem.initialViewRect;
++    const imageDimensions = tweened(initialView ? [initialView.width, initialView.height] : calculatedDimensions, defaultTweenOptions(opts.zoomDuration ?? 400));
+ 
+ 	component_subscribe($$self, imageDimensions, value => $$invalidate(0, $imageDimensions = value));
+ 
+ 	/** translate transform for pointerDown */
+-	const zoomDragTranslate = tweened([0, 0], defaultTweenOptions(400));
++	const initialTranslate = activeItem.origin ?
++        [activeItem.origin.left + activeItem.origin.width / 2 - container.w / 2,
++         activeItem.origin.top + activeItem.origin.height / 2 - container.h / 2] : [0, 0];
++    const viewTranslate = initialView ?
++        [initialView.left + initialView.width / 2 - container.w / 2,
++         initialView.top + initialView.height / 2 - container.h / 2] : initialTranslate;
++    const zoomDragTranslate = tweened(viewTranslate, defaultTweenOptions(opts.zoomDuration ?? 400));
+ 
+ 	component_subscribe($$self, zoomDragTranslate, value => $$invalidate(6, $zoomDragTranslate = value));
+ 
+ 	/** calculate translate position with bounds */
+ 	const boundTranslateValues = ([x, y], newDimensions = $imageDimensions) => {
++		if (opts.freePan) return [x, y];
+ 		// image drag translate bounds
+ 		const maxTranslateX = (newDimensions[0] - container.w) / 2;
+ 
+@@ -1257,13 +1267,13 @@ function instance$3($$self, $$props, $$invalidate) {
+ 				// if requesting zoom larger than natural size
+ 				newWidth = naturalWidth;
+ 
+-				newHeight = +activeItem.height;
++				newHeight = naturalHeight;
+ 			}
+-		} else if (newWidth < calculatedDimensions[0]) {
++		} else if (newWidth <= calculatedDimensions[0]) {
+ 			// if requesting image smaller than starting size
+ 			imageDimensions.set(calculatedDimensions);
+ 
+-			return zoomDragTranslate.set([0, 0]);
++			return zoomDragTranslate.set(initialTranslate);
+ 		}
+ 
+ 		let { x, y, width, height } = bpImg.getBoundingClientRect();
+@@ -1275,6 +1285,12 @@ function instance$3($$self, $$props, $$invalidate) {
+ 		x = -offsetX * (newWidth / width) + offsetX;
+ 		y = -offsetY * (newHeight / height) + offsetY;
+ 		const newDimensions = [newWidth, newHeight];
++        const fraction = Math.max(0, (newWidth - calculatedDimensions[0]) /
++            Math.max(0.001, $imageDimensions[0] - calculatedDimensions[0]));
++        const targetTranslate = amt < 0 ?
++            [initialTranslate[0] + ($zoomDragTranslate[0] - initialTranslate[0]) * fraction,
++             initialTranslate[1] + ($zoomDragTranslate[1] - initialTranslate[1]) * fraction] :
++            [$zoomDragTranslate[0] + x, $zoomDragTranslate[1] + y];
+ 
+ 		// set new dimensions and update sizes property
+ 		imageDimensions.set(newDimensions).then(() => {
+@@ -1282,7 +1298,7 @@ function instance$3($$self, $$props, $$invalidate) {
+ 		});
+ 
+ 		// update translate value
+-		zoomDragTranslate.set(boundTranslateValues([$zoomDragTranslate[0] + x, $zoomDragTranslate[1] + y], newDimensions));
++		zoomDragTranslate.set(boundTranslateValues(targetTranslate, newDimensions));
+ 	}
+ 
+ 	// allow zoom to be read / set externally
+@@ -1292,6 +1308,16 @@ function instance$3($$self, $$props, $$invalidate) {
+ 		set: bool => changeZoom(bool ? maxZoom : -maxZoom)
+ 	});
+ 
++    Object.defineProperty(activeItem, 'viewRect', {
++        configurable: true,
++        get: () => bpImg?.getBoundingClientRect()
++    });
++    Object.defineProperty(activeItem, 'zoomRatio', {
++        configurable: true,
++        get: () => $imageDimensions[0] / calculatedDimensions[0]
++    });
++    activeItem.zoomBy = (amount, point) => changeZoom(amount, point);
++
+ 	const onWheel = e => {
+ 		// return if scrolling past inline gallery w/ wheel
+ 		if (opts.inline && !$zoomed) {
+@@ -1302,6 +1328,7 @@ function instance$3($$self, $$props, $$invalidate) {
+ 		e.preventDefault();
+ 
+ 		// change zoom on wheel
++        if (opts.onWheel?.(e, activeItem)) return;
+ 		changeZoom(e.deltaY / -300, e);
+ 	};
+ 
+@@ -1346,7 +1373,7 @@ function instance$3($$self, $$props, $$invalidate) {
+ 		y = y - dragStartY;
+ 
+ 		// handle unzoomed left / right / up swipes
+-		if (!$zoomed) {
++		if (!$zoomed && !opts.freePan) {
+ 			// close if swipe up
+ 			if (y < -90) {
+ 				$$invalidate(4, pointerDown = !opts.noClose && props.close());
+@@ -1369,7 +1396,7 @@ function instance$3($$self, $$props, $$invalidate) {
+ 		}
+ 
+ 		// image drag when zoomed
+-		if ($zoomed && hasDragged && !$closing) {
++		if (($zoomed || opts.freePan) && hasDragged && !$closing) {
+ 			zoomDragTranslate.set(boundTranslateValues([dragStartTranslateX + x, dragStartTranslateY + y]), { duration: 0 });
+ 		}
+ 	};
+@@ -1419,12 +1446,17 @@ function instance$3($$self, $$props, $$invalidate) {
+ 		$$invalidate(4, pointerDown = false);
+ 
+ 		// close if overlay is clicked
+-		if (e.target === this && !opts.noClose) {
++		if (e.target === this && !opts.noClose && (!opts.freePan || !hasDragged)) {
+ 			return props.close();
+ 		}
+ 
+ 		// add drag inertia / snap back to bounds
+ 		if (hasDragged) {
++            if (opts.freePan) {
++                hasDragged = false;
++                dragPositions.length = 0;
++                return;
++            }
+ 			const [posOne, posTwo, posThree] = dragPositions.slice(-3);
+ 			const xDiff = posTwo.x - posThree.x;
+ 			const yDiff = posTwo.y - posThree.y;
+@@ -1436,7 +1468,7 @@ function instance$3($$self, $$props, $$invalidate) {
+ 				]));
+ 			}
+ 		} else if (!opts.onImageClick?.(container.el, activeItem)) {
+-			changeZoom($zoomed ? -maxZoom : maxZoom, e);
++			changeZoom($zoomed ? -maxZoom : (opts.clickZoom || maxZoom) - 1, e);
+ 		}
+ 
+ 		// reset pointer states
+@@ -1457,7 +1489,7 @@ function instance$3($$self, $$props, $$invalidate) {
+ 			// some browsers (ios safari 15) constantly resize screen on drag
+ 			if (opts.inline || !smallScreen) {
+ 				imageDimensions.set(calculatedDimensions);
+-				zoomDragTranslate.set([0, 0]);
++				zoomDragTranslate.set(initialTranslate);
+ 			}
+ 		});
+ 
+@@ -2035,6 +2067,7 @@ function create_if_block_3(ctx) {
+ function create_if_block_2(ctx) {
+ 	let div;
+ 	let raw_value = /*activeItem*/ ctx[6].caption + "";
++	let div_intro;
+ 	let div_outro;
+ 	let current;
+ 
+@@ -2052,11 +2085,16 @@ function create_if_block_2(ctx) {
+ 			if ((!current || dirty[0] & /*activeItem*/ 64) && raw_value !== (raw_value = /*activeItem*/ ctx[6].caption + "")) div.innerHTML = raw_value;		},
+ 		i(local) {
+ 			if (current) return;
+-			if (div_outro) div_outro.end(1);
++			add_render_callback(() => {
++				if (div_outro) div_outro.end(1);
++				div_intro = create_in_transition(div, (node) => ctx[5].captionTransition?.(node, true) || { duration: 0 }, {});
++				div_intro.start();
++			});
+ 			current = true;
+ 		},
+ 		o(local) {
+-			div_outro = create_out_transition(div, fly, { duration: 200 });
++			if (div_intro) div_intro.invalidate();
++			div_outro = create_out_transition(div, (node) => ctx[5].captionTransition?.(node, false) || fly(node, { duration: 200 }), {});
+ 			current = false;
+ 		},
+ 		d(detaching) {
+@@ -2452,7 +2490,8 @@ function instance($$self, $$props, $$invalidate) {
+  * @param {object} item object with height / width properties
+  * @returns {Array} [width: number, height: number]
+  */
+-	const calculateDimensions = ({ width = 1920, height = 1080 }) => {
++	const calculateDimensions = ({ width = 1920, height = 1080, origin }) => {
++		if (origin) return [origin.width, origin.height];
+ 		const { scale = 0.99 } = opts;
+ 		const ratio = Math.min(1, container.w / width * scale, container.h / height * scale);
+ 
+@@ -2486,6 +2525,11 @@ function instance($$self, $$props, $$invalidate) {
+ 
+ 	/** svelte transition to control opening / changing */
+ 	const mediaTransition = (node, isEntering) => {
++		if (opts.mediaTransition) {
++			const transferring = !isOpen || !items;
++			if (transferring) $$invalidate(18, isOpen = isEntering);
++			return opts.mediaTransition(node, isEntering, transferring);
++		}
+ 		if (!isOpen || !items) {
+ 			// entrance / exit transition
+ 			$$invalidate(18, isOpen = isEntering);
+@@ -2498,7 +2542,7 @@ function instance($$self, $$props, $$invalidate) {
+ 		// forward / backward transition
+ 		return fly(node, {
+ 			x: (movement > 0 ? 20 : -20) * (isEntering ? 1 : -1),
+-			duration: 250
++			duration: opts.transitionDuration ?? 250
+ 		});
+ 	};
+ 
+diff --git a/dist/bigger-picture.mjs b/dist/bigger-picture.mjs
+index f34aaacdd15141d00a78281ec83411e496824d23..d0908f0eeaa248c70d664d816d113843173e3779 100644
+--- a/dist/bigger-picture.mjs
++++ b/dist/bigger-picture.mjs
+@@ -1163,7 +1163,9 @@ function instance$3($$self, $$props, $$invalidate) {
+ 	/** if true, adds class to .bp-wrap to avoid image cropping */
+ 	let closingWhileZoomed;
+ 
+-	const naturalWidth = +activeItem.width;
++	const upscale = +activeItem.upscale || 1;
++	const naturalWidth = +activeItem.width * upscale;
++	const naturalHeight = +activeItem.height * upscale;
+ 
+ 	/** store positions for drag inertia */
+ 	const dragPositions = [];
+@@ -1172,17 +1174,25 @@ function instance$3($$self, $$props, $$invalidate) {
+ 	const pointerCache = new Map();
+ 
+ 	/** tween to control image size */
+-	const imageDimensions = tweened(calculatedDimensions, defaultTweenOptions(400));
++	const initialView = activeItem.initialViewRect;
++    const imageDimensions = tweened(initialView ? [initialView.width, initialView.height] : calculatedDimensions, defaultTweenOptions(opts.zoomDuration ?? 400));
+ 
+ 	component_subscribe($$self, imageDimensions, value => $$invalidate(0, $imageDimensions = value));
+ 
+ 	/** translate transform for pointerDown */
+-	const zoomDragTranslate = tweened([0, 0], defaultTweenOptions(400));
++	const initialTranslate = activeItem.origin ?
++        [activeItem.origin.left + activeItem.origin.width / 2 - container.w / 2,
++         activeItem.origin.top + activeItem.origin.height / 2 - container.h / 2] : [0, 0];
++    const viewTranslate = initialView ?
++        [initialView.left + initialView.width / 2 - container.w / 2,
++         initialView.top + initialView.height / 2 - container.h / 2] : initialTranslate;
++    const zoomDragTranslate = tweened(viewTranslate, defaultTweenOptions(opts.zoomDuration ?? 400));
+ 
+ 	component_subscribe($$self, zoomDragTranslate, value => $$invalidate(6, $zoomDragTranslate = value));
+ 
+ 	/** calculate translate position with bounds */
+ 	const boundTranslateValues = ([x, y], newDimensions = $imageDimensions) => {
++		if (opts.freePan) return [x, y];
+ 		// image drag translate bounds
+ 		const maxTranslateX = (newDimensions[0] - container.w) / 2;
+ 
+@@ -1257,13 +1267,13 @@ function instance$3($$self, $$props, $$invalidate) {
+ 				// if requesting zoom larger than natural size
+ 				newWidth = naturalWidth;
+ 
+-				newHeight = +activeItem.height;
++				newHeight = naturalHeight;
+ 			}
+-		} else if (newWidth < calculatedDimensions[0]) {
++		} else if (newWidth <= calculatedDimensions[0]) {
+ 			// if requesting image smaller than starting size
+ 			imageDimensions.set(calculatedDimensions);
+ 
+-			return zoomDragTranslate.set([0, 0]);
++			return zoomDragTranslate.set(initialTranslate);
+ 		}
+ 
+ 		let { x, y, width, height } = bpImg.getBoundingClientRect();
+@@ -1275,6 +1285,12 @@ function instance$3($$self, $$props, $$invalidate) {
+ 		x = -offsetX * (newWidth / width) + offsetX;
+ 		y = -offsetY * (newHeight / height) + offsetY;
+ 		const newDimensions = [newWidth, newHeight];
++        const fraction = Math.max(0, (newWidth - calculatedDimensions[0]) /
++            Math.max(0.001, $imageDimensions[0] - calculatedDimensions[0]));
++        const targetTranslate = amt < 0 ?
++            [initialTranslate[0] + ($zoomDragTranslate[0] - initialTranslate[0]) * fraction,
++             initialTranslate[1] + ($zoomDragTranslate[1] - initialTranslate[1]) * fraction] :
++            [$zoomDragTranslate[0] + x, $zoomDragTranslate[1] + y];
+ 
+ 		// set new dimensions and update sizes property
+ 		imageDimensions.set(newDimensions).then(() => {
+@@ -1282,7 +1298,7 @@ function instance$3($$self, $$props, $$invalidate) {
+ 		});
+ 
+ 		// update translate value
+-		zoomDragTranslate.set(boundTranslateValues([$zoomDragTranslate[0] + x, $zoomDragTranslate[1] + y], newDimensions));
++		zoomDragTranslate.set(boundTranslateValues(targetTranslate, newDimensions));
+ 	}
+ 
+ 	// allow zoom to be read / set externally
+@@ -1292,6 +1308,16 @@ function instance$3($$self, $$props, $$invalidate) {
+ 		set: bool => changeZoom(bool ? maxZoom : -maxZoom)
+ 	});
+ 
++    Object.defineProperty(activeItem, 'viewRect', {
++        configurable: true,
++        get: () => bpImg?.getBoundingClientRect()
++    });
++    Object.defineProperty(activeItem, 'zoomRatio', {
++        configurable: true,
++        get: () => $imageDimensions[0] / calculatedDimensions[0]
++    });
++    activeItem.zoomBy = (amount, point) => changeZoom(amount, point);
++
+ 	const onWheel = e => {
+ 		// return if scrolling past inline gallery w/ wheel
+ 		if (opts.inline && !$zoomed) {
+@@ -1302,6 +1328,7 @@ function instance$3($$self, $$props, $$invalidate) {
+ 		e.preventDefault();
+ 
+ 		// change zoom on wheel
++        if (opts.onWheel?.(e, activeItem)) return;
+ 		changeZoom(e.deltaY / -300, e);
+ 	};
+ 
+@@ -1346,7 +1373,7 @@ function instance$3($$self, $$props, $$invalidate) {
+ 		y = y - dragStartY;
+ 
+ 		// handle unzoomed left / right / up swipes
+-		if (!$zoomed) {
++		if (!$zoomed && !opts.freePan) {
+ 			// close if swipe up
+ 			if (y < -90) {
+ 				$$invalidate(4, pointerDown = !opts.noClose && props.close());
+@@ -1369,7 +1396,7 @@ function instance$3($$self, $$props, $$invalidate) {
+ 		}
+ 
+ 		// image drag when zoomed
+-		if ($zoomed && hasDragged && !$closing) {
++		if (($zoomed || opts.freePan) && hasDragged && !$closing) {
+ 			zoomDragTranslate.set(boundTranslateValues([dragStartTranslateX + x, dragStartTranslateY + y]), { duration: 0 });
+ 		}
+ 	};
+@@ -1419,12 +1446,17 @@ function instance$3($$self, $$props, $$invalidate) {
+ 		$$invalidate(4, pointerDown = false);
+ 
+ 		// close if overlay is clicked
+-		if (e.target === this && !opts.noClose) {
++		if (e.target === this && !opts.noClose && (!opts.freePan || !hasDragged)) {
+ 			return props.close();
+ 		}
+ 
+ 		// add drag inertia / snap back to bounds
+ 		if (hasDragged) {
++            if (opts.freePan) {
++                hasDragged = false;
++                dragPositions.length = 0;
++                return;
++            }
+ 			const [posOne, posTwo, posThree] = dragPositions.slice(-3);
+ 			const xDiff = posTwo.x - posThree.x;
+ 			const yDiff = posTwo.y - posThree.y;
+@@ -1436,7 +1468,7 @@ function instance$3($$self, $$props, $$invalidate) {
+ 				]));
+ 			}
+ 		} else if (!opts.onImageClick?.(container.el, activeItem)) {
+-			changeZoom($zoomed ? -maxZoom : maxZoom, e);
++			changeZoom($zoomed ? -maxZoom : (opts.clickZoom || maxZoom) - 1, e);
+ 		}
+ 
+ 		// reset pointer states
+@@ -1457,7 +1489,7 @@ function instance$3($$self, $$props, $$invalidate) {
+ 			// some browsers (ios safari 15) constantly resize screen on drag
+ 			if (opts.inline || !smallScreen) {
+ 				imageDimensions.set(calculatedDimensions);
+-				zoomDragTranslate.set([0, 0]);
++				zoomDragTranslate.set(initialTranslate);
+ 			}
+ 		});
+ 
+@@ -2035,6 +2067,7 @@ function create_if_block_3(ctx) {
+ function create_if_block_2(ctx) {
+ 	let div;
+ 	let raw_value = /*activeItem*/ ctx[6].caption + "";
++	let div_intro;
+ 	let div_outro;
+ 	let current;
+ 
+@@ -2052,11 +2085,16 @@ function create_if_block_2(ctx) {
+ 			if ((!current || dirty[0] & /*activeItem*/ 64) && raw_value !== (raw_value = /*activeItem*/ ctx[6].caption + "")) div.innerHTML = raw_value;		},
+ 		i(local) {
+ 			if (current) return;
+-			if (div_outro) div_outro.end(1);
++			add_render_callback(() => {
++				if (div_outro) div_outro.end(1);
++				div_intro = create_in_transition(div, (node) => ctx[5].captionTransition?.(node, true) || { duration: 0 }, {});
++				div_intro.start();
++			});
+ 			current = true;
+ 		},
+ 		o(local) {
+-			div_outro = create_out_transition(div, fly, { duration: 200 });
++			if (div_intro) div_intro.invalidate();
++			div_outro = create_out_transition(div, (node) => ctx[5].captionTransition?.(node, false) || fly(node, { duration: 200 }), {});
+ 			current = false;
+ 		},
+ 		d(detaching) {
+@@ -2452,7 +2490,8 @@ function instance($$self, $$props, $$invalidate) {
+  * @param {object} item object with height / width properties
+  * @returns {Array} [width: number, height: number]
+  */
+-	const calculateDimensions = ({ width = 1920, height = 1080 }) => {
++	const calculateDimensions = ({ width = 1920, height = 1080, origin }) => {
++		if (origin) return [origin.width, origin.height];
+ 		const { scale = 0.99 } = opts;
+ 		const ratio = Math.min(1, container.w / width * scale, container.h / height * scale);
+ 
+@@ -2486,6 +2525,11 @@ function instance($$self, $$props, $$invalidate) {
+ 
+ 	/** svelte transition to control opening / changing */
+ 	const mediaTransition = (node, isEntering) => {
++		if (opts.mediaTransition) {
++			const transferring = !isOpen || !items;
++			if (transferring) $$invalidate(18, isOpen = isEntering);
++			return opts.mediaTransition(node, isEntering, transferring);
++		}
+ 		if (!isOpen || !items) {
+ 			// entrance / exit transition
+ 			$$invalidate(18, isOpen = isEntering);
+@@ -2498,7 +2542,7 @@ function instance($$self, $$props, $$invalidate) {
+ 		// forward / backward transition
+ 		return fly(node, {
+ 			x: (movement > 0 ? 20 : -20) * (isEntering ? 1 : -1),
+-			duration: 250
++			duration: opts.transitionDuration ?? 250
+ 		});
+ 	};
+ 
+diff --git a/index.d.ts b/index.d.ts
+index 50c1f170a9654b1a2e94a7958004313b43db6e23..6c0f327cf2a5f0f92ad251a5572e049d8103c427 100644
+--- a/index.d.ts
++++ b/index.d.ts
+@@ -1,4 +1,17 @@
+ interface options {
++	zoomDuration?: number
++
++	onWheel?: (event: WheelEvent, item: item) => boolean
++
++	/** Allow unbounded dragging at any zoom level. */
++	freePan?: boolean
++
++	/** Custom entrance / exit transition for captions. */
++	captionTransition?: (node: HTMLElement, entering: boolean) => { duration: number; tick: (progress: number) => void }
++
++	/** Custom entrance / exit transition for gallery media. */
++	mediaTransition?: (node: HTMLElement, entering: boolean, transferring: boolean) => { duration: number; tick: (progress: number) => void }
++
+ 	/** The data source for the displayed items. See [Item Properties](https://github.com/henrygd/bigger-picture#item-properties) for details.
+ 	 *
+ 	 * If using NodeList or Node, the information is passed via data attributes. If using Array, the information is passed via object. */
+@@ -11,6 +24,10 @@ interface options {
+ 	position?: number
+ 	/** Controls the size of the displayed item. Use `1` to fill item to screen edges. */
+ 	scale?: number
++	/** Zoom factor used when an image is clicked. */
++	clickZoom?: number
++	/** Duration of transitions between gallery items in milliseconds. */
++	transitionDuration?: number
+ 	/** Overrides the default intro animation. Currently `fadeup` is the only alternative. */
+ 	intro?: string
+ 	/** Specifies that the lightbox is inline. Interaction events are modified to avoid hijacking scroll and tab press. */
+@@ -51,6 +68,13 @@ interface options {
+ }
+ 
+ interface item {
++	initialViewRect?: { left: number; top: number; width: number; height: number }
++	viewRect?: DOMRect
++
++	origin?: { left: number; top: number; width: number; height: number }
++	zoomRatio?: number
++	zoomBy?: (amount: number, point?: { clientX: number; clientY: number }) => void
++
+ 	[key: string]: any
+ 	/** Largest possible width of media item in pixels. Not required for HTML, which can be sized via CSS. */
+ 	width?: string | number
+@@ -87,6 +111,8 @@ interface item {
+ 	caption?: string
+ 	/** Sets the sizes attribute if you're using `srcset`. */
+ 	sizes?: string
++	/** Allows zooming beyond the source dimensions without changing the initial display size. */
++	upscale?: number
+ 	/** Restricts an image's maximum zoom level to `maxZoom` times the starting size, even if the item's `width` / `height` is larger. For example, a `maxZoom` of 2 on an image that is 800px wide when zoomed out would limit the image to a maximum zoom of 1600px width.
+ 	 *
+ 	 * If `maxZoom` is set on an individual item it will override the value set in options. Attribute name is `data-max-zoom`. */
+diff --git a/src/bigger-picture.svelte b/src/bigger-picture.svelte
+index 9d3e47e75ad3addfaeaa8485e03084f21f2c508f..9c8e5d25fe887b75a53ceee1dbe72f89eeed60ea 100644
+--- a/src/bigger-picture.svelte
++++ b/src/bigger-picture.svelte
+@@ -162,7 +162,8 @@
+ 	 * @param {object} item object with height / width properties
+ 	 * @returns {Array} [width: number, height: number]
+ 	 */
+-	const calculateDimensions = ({ width = 1920, height = 1080 }) => {
++	const calculateDimensions = ({ width = 1920, height = 1080, origin }) => {
++		if (origin) return [origin.width, origin.height]
+ 		const { scale = 0.99 } = opts
+ 		const ratio = Math.min(
+ 			1,
+@@ -194,8 +195,16 @@
+ 		}
+ 	}
+ 
++	const captionTransition = (node, entering) =>
++		opts.captionTransition?.(node, entering) || fly(node, { duration: entering ? 0 : 200 })
++
+ 	/** svelte transition to control opening / changing */
+ 	const mediaTransition = (node, isEntering) => {
++		if (opts.mediaTransition) {
++			const transferring = !isOpen || !items
++			if (transferring) isOpen = isEntering
++			return opts.mediaTransition(node, isEntering, transferring)
++		}
+ 		if (!isOpen || !items) {
+ 			// entrance / exit transition
+ 			isOpen = isEntering
+@@ -206,7 +215,7 @@
+ 		// forward / backward transition
+ 		return fly(node, {
+ 			x: (movement > 0 ? 20 : -20) * (isEntering ? 1 : -1),
+-			duration: 250,
++			duration: opts.transitionDuration ?? 250,
+ 		})
+ 	}
+ 
+@@ -331,7 +340,7 @@
+ 				{/if}
+ 			</div>
+ 			{#if activeItem.caption}
+-				<div class="bp-cap" out:fly|global={{ duration: 200 }}>
++				<div class="bp-cap" in:captionTransition|global={true} out:captionTransition|global={false}>
+ 					{@html activeItem.caption}
+ 				</div>
+ 			{/if}
+diff --git a/src/components/image.svelte b/src/components/image.svelte
+index 03aeb19782fc20f36817e6b7050833039f529131..7274c6cfed378ea6951be60f25ac698856bbba6a 100644
+--- a/src/components/image.svelte
++++ b/src/components/image.svelte
+@@ -42,7 +42,9 @@
+ 	/** if true, adds class to .bp-wrap to avoid image cropping */
+ 	let closingWhileZoomed
+ 
+-	const naturalWidth = +activeItem.width
++	const upscale = +activeItem.upscale || 1
++	const naturalWidth = +activeItem.width * upscale
++	const naturalHeight = +activeItem.height * upscale
+ 
+ 	/** store positions for drag inertia */
+ 	const dragPositions = []
+@@ -51,12 +53,19 @@
+ 	const pointerCache = new Map()
+ 
+ 	/** tween to control image size */
++    const initialView = activeItem.initialViewRect
+ 	const imageDimensions = tweened(
+-		calculatedDimensions,
+-		defaultTweenOptions(400)
++		initialView ? [initialView.width, initialView.height] : calculatedDimensions,
++		defaultTweenOptions(opts.zoomDuration ?? 400)
+ 	)
+ 	/** translate transform for pointerDown */
+-	const zoomDragTranslate = tweened([0, 0], defaultTweenOptions(400))
++	const initialTranslate = activeItem.origin ?
++        [activeItem.origin.left + activeItem.origin.width / 2 - container.w / 2,
++         activeItem.origin.top + activeItem.origin.height / 2 - container.h / 2] : [0, 0]
++    const viewTranslate = initialView ?
++        [initialView.left + initialView.width / 2 - container.w / 2,
++         initialView.top + initialView.height / 2 - container.h / 2] : initialTranslate
++    const zoomDragTranslate = tweened(viewTranslate, defaultTweenOptions(opts.zoomDuration ?? 400))
+ 
+ 	$: zoomed.set($imageDimensions[0] - 10 > calculatedDimensions[0])
+ 
+@@ -71,6 +80,7 @@
+ 
+ 	/** calculate translate position with bounds */
+ 	const boundTranslateValues = ([x, y], newDimensions = $imageDimensions) => {
++		if (opts.freePan) return [x, y]
+ 		// image drag translate bounds
+ 		const maxTranslateX = (newDimensions[0] - container.w) / 2
+ 		const maxTranslateY = (newDimensions[1] - container.h) / 2
+@@ -137,12 +147,12 @@
+ 			if (newWidth > naturalWidth) {
+ 				// if requesting zoom larger than natural size
+ 				newWidth = naturalWidth
+-				newHeight = +activeItem.height
++				newHeight = naturalHeight
+ 			}
+-		} else if (newWidth < calculatedDimensions[0]) {
++		} else if (newWidth <= calculatedDimensions[0]) {
+ 			// if requesting image smaller than starting size
+ 			imageDimensions.set(calculatedDimensions)
+-			return zoomDragTranslate.set([0, 0])
++			return zoomDragTranslate.set(initialTranslate)
+ 		}
+ 
+ 		let { x, y, width, height } = bpImg.getBoundingClientRect()
+@@ -155,6 +165,13 @@
+ 		y = -offsetY * (newHeight / height) + offsetY
+ 
+ 		const newDimensions = [newWidth, newHeight]
++        const fraction = Math.max(0, (newWidth - calculatedDimensions[0]) /
++            Math.max(0.001, $imageDimensions[0] - calculatedDimensions[0]))
++        const targetTranslate = amt < 0 ?
++            [initialTranslate[0] + ($zoomDragTranslate[0] - initialTranslate[0]) * fraction,
++             initialTranslate[1] + ($zoomDragTranslate[1] - initialTranslate[1]) * fraction] :
++            [$zoomDragTranslate[0] + x, $zoomDragTranslate[1] + y]
++
+ 
+ 		// set new dimensions and update sizes property
+ 		imageDimensions.set(newDimensions).then(() => {
+@@ -164,7 +181,7 @@
+ 		// update translate value
+ 		zoomDragTranslate.set(
+ 			boundTranslateValues(
+-				[$zoomDragTranslate[0] + x, $zoomDragTranslate[1] + y],
++				targetTranslate,
+ 				newDimensions
+ 			)
+ 		)
+@@ -177,6 +194,16 @@
+ 		set: (bool) => changeZoom(bool ? maxZoom : -maxZoom),
+ 	})
+ 
++    Object.defineProperty(activeItem, 'viewRect', {
++        configurable: true,
++        get: () => bpImg?.getBoundingClientRect()
++    })
++    Object.defineProperty(activeItem, 'zoomRatio', {
++        configurable: true,
++        get: () => $imageDimensions[0] / calculatedDimensions[0]
++    })
++    activeItem.zoomBy = (amount, point) => changeZoom(amount, point)
++
+ 	const onWheel = (e) => {
+ 		// return if scrolling past inline gallery w/ wheel
+ 		if (opts.inline && !$zoomed) {
+@@ -185,6 +212,7 @@
+ 		// preventDefault to stop scrolling on zoomed inline image
+ 		e.preventDefault()
+ 		// change zoom on wheel
++        if (opts.onWheel?.(e, activeItem)) return
+ 		changeZoom(e.deltaY / -300, e)
+ 	}
+ 
+@@ -226,7 +254,7 @@
+ 		y = y - dragStartY
+ 
+ 		// handle unzoomed left / right / up swipes
+-		if (!$zoomed) {
++		if (!$zoomed && !opts.freePan) {
+ 			// close if swipe up
+ 			if (y < -90) {
+ 				pointerDown = !opts.noClose && props.close()
+@@ -247,7 +275,7 @@
+ 		}
+ 
+ 		// image drag when zoomed
+-		if ($zoomed && hasDragged && !$closing) {
++		if (($zoomed || opts.freePan) && hasDragged && !$closing) {
+ 			zoomDragTranslate.set(
+ 				boundTranslateValues([
+ 					dragStartTranslateX + x,
+@@ -301,12 +329,17 @@
+ 		pointerDown = false
+ 
+ 		// close if overlay is clicked
+-		if (e.target === this && !opts.noClose) {
++		if (e.target === this && !opts.noClose && (!opts.freePan || !hasDragged)) {
+ 			return props.close()
+ 		}
+ 
+ 		// add drag inertia / snap back to bounds
+ 		if (hasDragged) {
++            if (opts.freePan) {
++                hasDragged = false;
++                dragPositions.length = 0;
++                return;
++            }
+ 			const [posOne, posTwo, posThree] = dragPositions.slice(-3)
+ 			const xDiff = posTwo.x - posThree.x
+ 			const yDiff = posTwo.y - posThree.y
+@@ -319,7 +352,7 @@
+ 				)
+ 			}
+ 		} else if (!opts.onImageClick?.(container.el, activeItem)) {
+-			changeZoom($zoomed ? -maxZoom : maxZoom, e)
++			changeZoom($zoomed ? -maxZoom : (opts.clickZoom || maxZoom) - 1, e)
+ 		}
+ 
+ 		// reset pointer states
+@@ -337,7 +370,7 @@
+ 			// some browsers (ios safari 15) constantly resize screen on drag
+ 			if (opts.inline || !smallScreen) {
+ 				imageDimensions.set(calculatedDimensions)
+-				zoomDragTranslate.set([0, 0])
++				zoomDragTranslate.set(initialTranslate)
+ 			}
+ 		})
+ 		// decode initial image before rendering

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" ondragstart="return !1" ondrop="return !1">
+<html lang="en">
     <head>
         <title>Arcade Font Engine</title>
         <meta charset="utf-8"/>
@@ -22,15 +22,15 @@
         <div id="content">
             <div class="grid">
                 <div class="col-12 title">
-                    <img class="shake pointer" id="title"/>
+                    <img class="littleshake pointer" id="title"/>
                 </div>
 
                 <fieldset class="col-md-5 cell fonts">
                     <legend><span>Font <span class="legend" id="font-legend"></span> of <span class="legend" id="font-legend-total"></span></span>
                         <span class="legend-line"></span>
                         <span class="output-links">
-                            <a target="_blank" class="shake" style="color:#00ffff" href="https://nfggames.com/games/fontmaker/">Original</a>
-                            <a id="leet" target="_blank" class="shake" style="color:#00ff00" href="https://github.com/flameshikari/arcade-font-engine">Source</a>
+                            <a target="_blank" class="littleshake" style="color:#00ffff" href="https://nfggames.com/games/fontmaker/">Original</a>
+                            <a id="leet" target="_blank" class="littleshake" style="color:#00ff00" href="https://github.com/flameshikari/arcade-font-engine">Source</a>
                         </span>
                     </legend>
                     <div class="slider-row">
@@ -47,13 +47,13 @@
                     <legend>Style <span class="legend" id="styles-legend"></span> of <span class="legend" id="styles-legend-total"></span></legend>
                     <div class="slider-row">
                         <span class="glyph" id="style-prev">&lsaquo;</span>
-                        <p id="styles" class="slider-fill"></p>
+                        <div class="slider-fill styles-viewport"><p id="styles"></p></div>
                         <span class="glyph" id="style-next">&rsaquo;</span>
                     </div>
                 </fieldset>
 
                 <fieldset class="col-12 cell glyphs">
-                    <legend><span class="shake" id="glyphs-legend">Glyphs</span> <span id="dev-legend"></span></legend>
+                    <legend><span class="littleshake" id="glyphs-legend">Glyphs</span> <span id="dev-legend"></span></legend>
                     <span id="glyphs">
                         <img id="uppercase">
                         <br>
@@ -64,7 +64,7 @@
                 </fieldset>
 
                 <fieldset class="col-md-auto cell input">
-                    <legend><span class="shake" style="cursor: help; color:#0000ff;" id="shortcuts-trigger">Input</span></legend>
+                    <legend><span class="littleshake" style="cursor: help; color:#0000ff;" id="shortcuts-trigger">Input</span></legend>
                     <input class="blinker" id="input" placeholder="TYPE HERE!" type="text" name="string">
                 </fieldset>
 
@@ -81,14 +81,14 @@
 
                 <fieldset class="col-sm-auto cell bubble">
                     <legend>
-                        <label class="shake" for="bubble">Bubble</label>
-                        <input class="shake" type="checkbox" name="bubble" id="bubble">
+                        <label class="littleshake" for="bubble">Bubble</label>
+                        <input class="littleshake" type="checkbox" name="bubble" id="bubble">
                         <span class="bubble-toggle">
-                            <label class="shake bubble-opt" for="bubble-flip">Flip</label>
+                            <label class="littleshake bubble-opt" for="bubble-flip">Flip</label>
                             <input type="checkbox" name="bubble-flip" id="bubble-flip">
                         </span>
                         <span class="bubble-toggle">
-                            <label class="shake bubble-opt" for="bubble-theme">Dark</label>
+                            <label class="littleshake bubble-opt" for="bubble-theme">Dark</label>
                             <input type="checkbox" name="bubble-theme" id="bubble-theme">
                         </span>
                         <span class="legend" id="bubble-legend"></span>
@@ -103,10 +103,10 @@
                 </fieldset>
 
                 <fieldset class="col-12 cell output">
-                    <legend>Output <a target="_blank" class="shake output-link" id="save-svg" href="#">SVG</a> <a target="_blank" class="shake output-link" id="save-png" href="#">PNG</a></legend>
+                    <legend><span>Output <a target="_blank" class="littleshake output-link" id="save-svg" href="#">SVG</a> <a target="_blank" class="littleshake output-link" id="save-png" href="#">PNG</a></span><span class="legend-line"></span><button id="reset" class="littleshake" type="button">Reset</button></legend>
                     <div class="center">
-                        <a target="_blank" id="blank">
-                            <img class="shake pointer" id="output">
+                        <a id="blank">
+                            <img class="littleshake pointer" id="output">
                         </a>
                     </div>
                 </fieldset>
