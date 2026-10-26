@@ -3,7 +3,7 @@ name: Build
 on:
   push:
     tags:
-      - 'v*'
+      - '[0-9]+.[0-9]+.[0-9]+'
 
 concurrency:
   group: build
@@ -14,7 +14,27 @@ env:
   DOCKER_BUILD_RECORD_UPLOAD: false
 
 jobs:
+  compatibility:
+    name: Browser compatibility
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: '1.4.4'
+      - name: Build and validate target compatibility
+        run: bun install --frozen-lockfile && bun run build:prod
+      - name: Install browser engines
+        run: bunx playwright install --with-deps chromium firefox webkit
+      - name: Exercise browser engines and legacy API fallbacks
+        run: bun run test:browser
+
   docker:
+    needs: compatibility
     name: Docker [${{ matrix.arch }}]
     runs-on: ${{ contains(matrix.arch, 'arm') && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     permissions:
@@ -25,26 +45,33 @@ jobs:
         arch: [amd64, arm64]
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GH_TOKEN }}
+          password: ${{ github.token }}
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
         with:
           username: ${{ github.actor }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
+      - name: Login to Docker Hardened Images
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
+        with:
+          registry: dhi.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
       - name: Set Metadata
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
         id: meta
         with:
           images: |
@@ -52,13 +79,15 @@ jobs:
             ghcr.io/${{ github.repository }}
 
       - name: Build Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         id: build
         with:
           context: .
           cache-from: type=gha,scope=docker-${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=docker-${{ matrix.arch }}
           platforms: linux/${{ matrix.arch }}
+          provenance: false
+          sbom: false
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,"name=${{ github.repository }},ghcr.io/${{ github.repository }}",push-by-digest=true,name-canonical=true,push=true
 
@@ -69,7 +98,7 @@ jobs:
           touch "${{ runner.temp }}/digests/${digest#sha256:}"
 
       - name: Upload Digests
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: digests-${{ matrix.arch }}
           path: ${{ runner.temp }}/digests/*
@@ -85,30 +114,30 @@ jobs:
       packages: write
     steps:
       - name: Download Digests
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: ${{ runner.temp }}/digests
           pattern: digests-*
           merge-multiple: true
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GH_TOKEN }}
+          password: ${{ github.token }}
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
         with:
           username: ${{ github.actor }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
       - name: Set Metadata
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
         with:
           images: |
             ${{ github.repository }}
@@ -126,7 +155,8 @@ jobs:
             $(printf 'ghcr.io/${{ github.repository }}@sha256:%s ' *)
 
   binaries:
-    name: Binary (${{ matrix.os }}/${{ matrix.arch }})
+    needs: compatibility
+    name: Binary [${{ matrix.os }}/${{ matrix.arch }}]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -136,25 +166,29 @@ jobs:
         arch: [amd64, arm64]
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: '1.4.4'
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
-          go-version: '1.24'
+          go-version-file: server/go.mod
           cache: false
 
       - name: Build Frontend
-        run: bun install && bun run build:prod
+        run: bun install --frozen-lockfile && bun run build:prod
 
       - name: Build Binary
         working-directory: server
         run: |
           cp -r ../public ./public
-          go mod tidy
+          go mod verify
+          go test ./...
+          go vet ./...
           name="arcade-font-engine"
           ext=""
           if [ "${{ matrix.os }}" = "windows" ]; then ext=".exe"; fi
@@ -172,7 +206,7 @@ jobs:
           fi
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: arcade-font-engine-${{ matrix.os }}-${{ matrix.arch }}
           path: arcade-font-engine-*.*
@@ -188,14 +222,14 @@ jobs:
       contents: write
     steps:
       - name: Download Artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: ${{ runner.temp }}/release
           pattern: arcade-font-engine-*
           merge-multiple: true
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           files: ${{ runner.temp }}/release/*
           generate_release_notes: true

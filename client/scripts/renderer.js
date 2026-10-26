@@ -1,3 +1,9 @@
+import assets from '#assets';
+
+export const textLimit = 100;
+export const normalizeText = text => String(text || '').replace(/[^\x20-\x7e]/g, '').slice(0, textLimit);
+const rendered = new Map();
+let renderedBytes = 0;
 const CHAR_W = 8;
 const CHAR_H = 8;
 const CHAR_OFFSET = 32;
@@ -10,8 +16,8 @@ function loadImage(src) {
     const p = new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => resolve(img);
-        img.onerror = reject;
-        img.src = src;
+        img.onerror = event => { imageCache.delete(src); reject(event); };
+        img.src = assets[src.replace(/^\//, '')] ? '/' + assets[src.replace(/^\//, '')] : src;
     });
     imageCache.set(src, p);
     return p;
@@ -107,18 +113,53 @@ async function applyBubble(src, flip, theme, pos) {
 async function renderCanvas(opts) {
     const { text, font, style = 0, size = 1, bubble = false, bubbleFlip = false, bubbleTheme = false, bubblePos = 25 } = opts;
     const fontImg = await getFontImage(font);
-    let canvas = renderText(fontImg, text || 'SAMPLE TEXT', style);
+    let canvas = renderText(fontImg, normalizeText(text) || 'SAMPLE TEXT', style);
 
     if (bubble) {
         canvas = await applyBubble(canvas, bubbleFlip, bubbleTheme, bubblePos);
     }
 
-    return { canvas, size };
+    return { canvas, size: Math.max(1, Math.min(9, Number(size) || 1)) };
 }
 
-export async function render(opts) {
-    const { canvas, size } = await renderCanvas(opts);
-    return scale(canvas, size).toDataURL('image/png');
+// Keep a bounded LRU of renders, sharing in-flight work with the gallery.
+export function render(opts) {
+    const normalized = {
+        text: normalizeText(opts.text), font: opts.font, style: opts.style || 0,
+        size: Math.max(1, Math.min(9, Number(opts.size) || 1)),
+        bubble: !!opts.bubble, bubbleFlip: !!opts.bubbleFlip,
+        bubbleTheme: !!opts.bubbleTheme, bubblePos: opts.bubblePos ?? 25,
+    };
+    const key = JSON.stringify(normalized);
+    if (rendered.has(key)) {
+        const entry = rendered.get(key);
+        rendered.delete(key); rendered.set(key, entry);
+        return entry.promise;
+    }
+    const entry = { bytes: 0 };
+    entry.promise = renderCanvas(normalized).then(({ canvas, size }) => {
+        const src = scale(canvas, size).toDataURL('image/png');
+        if (rendered.get(key) === entry) {
+            entry.bytes = src.length * 2;
+            renderedBytes += entry.bytes;
+            trim();
+        }
+        return src;
+    }).catch(error => {
+        if (rendered.get(key) === entry) rendered.delete(key);
+        throw error;
+    });
+    rendered.set(key, entry);
+    trim();
+    return entry.promise;
+}
+
+function trim() {
+    while (rendered.size > 24 || renderedBytes > 8 * 1024 * 1024) {
+        const key = rendered.keys().next().value;
+        renderedBytes -= rendered.get(key).bytes;
+        rendered.delete(key);
+    }
 }
 
 function canvasToSVG(canvas, pixelSize) {

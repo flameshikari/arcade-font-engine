@@ -1,4 +1,5 @@
-@import 'jquery-ui-dist/jquery-ui.css';
+@import 'jquery-ui/dist/themes/base/jquery-ui.css';
+@import 'bigger-picture/css';
 @import './reflex.css';
 
 @font-face {
@@ -11,33 +12,6 @@
 	100% { background-position: 2px 0; }
 }
 
-@keyframes shake {
-	0% { transform: translate(1px, 1px) rotate(0deg); }
-	10% { transform: translate(-1px, -1px) rotate(-1deg); }
-	20% { transform: translate(-1px, 0px) rotate(1deg); }
-	30% { transform: translate(1px, 1px) rotate(0deg); }
-	40% { transform: translate(1px, -1px) rotate(1deg); }
-	50% { transform: translate(-1px, 1px) rotate(-1deg); }
-	60% { transform: translate(1px, -1px) rotate(0deg); }
-	70% { transform: translate(1px, 1px) rotate(-1deg); }
-	80% { transform: translate(-1px, -1px) rotate(1deg); }
-	90% { transform: translate(1px, 1px) rotate(0deg); }
-	100% { transform: translate(1px, -1px) rotate(-1deg); }
-}
-
-@keyframes shake-rotated {
-	0% { transform: rotate(90deg) translate(1px, 1px); }
-	10% { transform: rotate(89deg) translate(-1px, -1px); }
-	20% { transform: rotate(91deg) translate(-1px, 0px); }
-	30% { transform: rotate(90deg) translate(1px, 1px); }
-	40% { transform: rotate(91deg) translate(1px, -1px); }
-	50% { transform: rotate(89deg) translate(-1px, 1px); }
-	60% { transform: rotate(90deg) translate(1px, -1px); }
-	70% { transform: rotate(89deg) translate(1px, 1px); }
-	80% { transform: rotate(91deg) translate(-1px, -1px); }
-	90% { transform: rotate(90deg) translate(1px, 1px); }
-	100% { transform: rotate(89deg) translate(1px, -1px); }
-}
 
 * {
 	font-family: 'font';
@@ -53,28 +27,36 @@
 }
 
 html {
-	height: 100%;
-	min-height: 100vh;
-	min-height: 100dvh;
-	background: black url('../images/background.png');
+	min-height: 100%;
+	background-color: black;
+	overflow-x: hidden;
+	overflow-x: clip;
+	overflow-y: auto;
+	scrollbar-width: auto;
 }
 
-html, body {
-	height: 100%;
-	background: black url('../images/background.png');
+body {
+	min-height: 100vh;
+	min-height: 100dvh;
 	width: 100%;
-	margin: auto;
-	font-size: 100%;
-	display: table;
 	max-width: 800px;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: column;
+	isolation: isolate;
+	font-size: 100%;
 	color: white;
-	overflow-y: auto;
 }
 
 ::-webkit-scrollbar {
 	width: 0;
 	height: 0;
 	background: transparent;
+}
+
+html::-webkit-scrollbar {
+	width: auto;
+	height: auto;
 }
 
 a {
@@ -119,30 +101,52 @@ input::placeholder {
 	font-style: italic;
 }
 
-#title {
+#title,
+.output-transition-title {
 	padding-bottom: 1ch;
 }
 
 @media (max-width: 768px) {
-	#title {
+	#title,
+	.output-transition-title {
 		padding-top: 2ch;
 	}
 }
 
 #content {
-	display: table-cell;
+	flex: none;
+	margin-top: auto;
+	margin-bottom: auto;
+	margin-block: auto;
 	text-align: center;
 	visibility: hidden;
-	vertical-align: middle;
-	max-height: 900px;
+	/* Clip visual overflow from the shaking grid, keeping its layout height. */
+	overflow: hidden;
+	overflow: clip;
+}
+
+/* Keep the native scrollbar below the visible style row, even if the OS forces it. */
+.styles-viewport {
+	height: 32px;
+	overflow: hidden;
 }
 
 #styles {
+	height: 64px;
+	width: 100%;
+	line-height: 32px;
 	overflow-x: auto;
+	overflow-y: hidden;
 	white-space: nowrap;
 	scrollbar-width: none;
 	scroll-snap-type: x mandatory;
 	isolation: isolate;
+}
+
+#styles::-webkit-scrollbar {
+	display: none;
+	width: 0;
+	height: 0;
 }
 
 .style-wrap {
@@ -197,14 +201,17 @@ input::placeholder {
 }
 
 #dropdown-overlay {
-	display: none;
+	pointer-events: none;
 	position: fixed;
 	top: 0;
 	left: 0;
 	width: 100%;
 	height: 100%;
-	background: rgba(0, 0, 0, 0.95);
 	z-index: 49;
+}
+
+#dropdown-overlay.is-visible {
+	pointer-events: auto;
 }
 
 .center {
@@ -220,7 +227,8 @@ input::placeholder {
 	}
 }
 
-.fonts > legend {
+.fonts > legend,
+.output > legend {
 	display: flex;
 	width: calc(100% - 2ch);
 }
@@ -263,22 +271,16 @@ input::placeholder {
 	visibility: hidden;
 }
 
-.shake {
+.littleshake {
 	cursor: pointer;
 }
 
-.style-selected.shake {
+.style-selected.littleshake {
 	cursor: not-allowed;
 	animation: none !important;
 }
 
-@media (hover: hover) {
-	.shake:hover {
-		animation: shake 0.25s;
-		animation-iteration-count: infinite;
-		display: inline-block;
-	}
-}
+
 
 
 /* jquery ui */
@@ -328,16 +330,14 @@ input::placeholder {
 			#00000077 1px,
 			#11111177 1px,
 			#11111177 2px
-		),
-		black url('../images/background.png');
+		);
+	background-color: rgba(0, 0, 0, 0.5);
 	color: white;
 	border: 0;
 }
 
 .ui-selectmenu-menu {
-	position: absolute !important;
-	left: -1px !important;
-	right: -1px !important;
+	position: fixed !important;
 	width: auto !important;
 	z-index: 100 !important;
 }
@@ -377,13 +377,6 @@ input::placeholder {
 	position: absolute;
 	right: 1ch;
 	color: #666;
-}
-
-.ui-selectmenu-menu .ui-menu::before,
-.ui-selectmenu-menu .ui-menu::after {
-	content: '';
-	display: block;
-	height: var(--overscroll, 0);
 }
 
 .fonts.dropdown-open {
@@ -479,16 +472,16 @@ input::placeholder {
 @media (hover: hover) {
 	.glyph:hover {
 		color: #0000ff;
-		animation: shake 0.25s infinite;
+		animation: littleshake 0.25s steps(1, end) infinite;
 	}
 
 	#font-prev:hover,
 	#font-next:hover {
-		animation: shake-rotated 0.25s infinite;
+		animation: littleshake-rotated 0.25s steps(1, end) infinite;
 	}
 
 	.ui-selectmenu-button:hover {
-		animation: shake 0.25s infinite;
+		animation: littleshake 0.25s steps(1, end) infinite;
 	}
 }
 
@@ -536,7 +529,7 @@ table td:last-child {
 
 @media (hover: hover) {
 	.ui-button.ui-checkboxradio-label:hover {
-		animation: shake 0.25s infinite;
+		animation: littleshake 0.25s steps(1, end) infinite;
 	}
 }
 
@@ -623,4 +616,349 @@ table td:last-child {
 
 .bubble-slider.disabled {
 	cursor: not-allowed;
+}
+
+#title,
+#glyphs img,
+#output,
+.output-transition {
+	height: auto;
+	max-width: 100%;
+	vertical-align: middle;
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: crisp-edges;
+	image-rendering: pixelated;
+}
+
+
+
+#page-background,
+#page-background-glow {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: -1;
+	pointer-events: none;
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: crisp-edges;
+	image-rendering: pixelated;
+	/* Original glyph opacity (8%) with the 50% brightness overlay applied. */
+	opacity: 0.04;
+}
+
+
+#page-background-glow {
+	width: auto;
+	height: auto;
+	opacity: 0.06;
+}
+
+
+#glyphs img,
+#glyphs .output-transition,
+#blank,
+#blank .pointer {
+	cursor: zoom-in;
+}
+
+#glyphs img:focus-visible {
+	outline: 1px solid #0000ff;
+}
+
+.glyph-gallery {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 10000;
+	pointer-events: none;
+}
+
+.glyph-gallery > .bp-wrap {
+	pointer-events: auto;
+}
+
+
+.glyph-gallery .bp-img img {
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: crisp-edges;
+	image-rendering: pixelated;
+}
+
+.glyph-gallery .bp-controls button {
+	color: #666;
+	background: transparent;
+	font: inherit;
+	font-size: 32px;
+	opacity: 1;
+	border-radius: 0;
+	transition: none;
+}
+
+.glyph-gallery .bp-controls button:hover {
+	color: #0000ff;
+}
+
+.glyph-gallery .bp-controls button::before,
+.glyph-gallery .bp-controls button::after {
+	content: none;
+}
+
+.glyph-gallery .bp-x:hover {
+	color: #ff0000;
+}
+
+.glyph-gallery .bp-prev {
+	transform: none;
+}
+
+.glyph-gallery .bp-cap {
+	font: inherit;
+	background: black;
+}
+
+.gallery-source-hidden {
+	visibility: hidden;
+}
+
+.glyph-gallery .bp-zoomed.bp-small .bp-controls {
+	opacity: 1;
+}
+
+.glyph-gallery .bp-zoomed.bp-small .bp-controls button {
+	pointer-events: auto;
+}
+
+
+.glyph-gallery .bp-count {
+	display: none;
+}
+
+.gallery-media-mosaic {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: crisp-edges;
+	image-rendering: pixelated;
+}
+
+.gallery-source-mosaic {
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: crisp-edges;
+	image-rendering: pixelated;
+}
+
+.gallery-media-masked {
+	background-image: none !important;
+}
+
+.gallery-media-masked > img {
+	visibility: hidden;
+}
+
+
+.glyph-gallery .bp-cap {
+	animation: none;
+	transition: none;
+}
+
+.glyph-gallery .bp-img {
+	cursor: grab;
+}
+
+.glyph-gallery .bp-img.bp-drag {
+	cursor: grabbing;
+}
+
+
+#reset {
+	padding: 0;
+	border: 0;
+	background: black;
+	color: #ff0000;
+	font: inherit;
+	line-height: 1;
+	margin: -0.5em 0;
+	align-self: center;
+	cursor: pointer;
+	flex: none;
+}
+
+
+.glyph-gallery .bp-zoomed .bp-cap {
+	opacity: 1;
+}
+
+.gallery-color {
+	position: absolute;
+	top: 0;
+	left: 16px;
+	height: 55px;
+	max-width: calc(100% - 90px);
+	z-index: 2;
+	display: flex;
+	flex-wrap: wrap;
+	align-content: center;
+	align-items: center;
+	justify-content: flex-start;
+	font-size: 16px;
+	line-height: 1;
+	white-space: nowrap;
+	pointer-events: none;
+	visibility: hidden;
+}
+
+.gallery-color.is-visible {
+	visibility: visible;
+}
+
+.gallery-color > * + * {
+	margin-left: 1ch;
+}
+
+.gallery-color-swatch {
+	position: relative;
+	display: inline-block;
+	width: 18px;
+	height: 18px;
+	flex: none;
+}
+
+.gallery-color-chip {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+}
+
+
+.glyph-gallery .bp-img {
+	background-image: none !important;
+}
+
+
+
+.gallery-color > span {
+	font-size: inherit;
+}
+
+.gallery-color-hex {
+	min-width: 7ch;
+}
+
+
+
+@keyframes littleshake {
+	0%, 100% { transform: translate(0, 0); }
+	25% { transform: translate(1px, 0); }
+	50% { transform: translate(-1px, 1px); }
+	75% { transform: translate(0, -1px); }
+}
+
+@media (hover: hover) {
+	.littleshake:hover {
+	    display: inline-block;
+	    animation: littleshake 0.25s steps(1, end) infinite;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.littleshake:hover { animation: none; }
+}
+
+
+.stepped-backdrop {
+	background: rgba(0, 0, 0, 0.95) !important;
+	opacity: var(--backdrop-step, 0) !important;
+	animation: none !important;
+	transition: none !important;
+	transform: none !important;
+}
+
+
+.glyph-gallery .bp-cap {
+	text-align: center;
+}
+
+.ui-selectmenu-menu.menu-closing {
+	display: block;
+	pointer-events: none;
+}
+
+
+@keyframes littleshake-rotated {
+	0%, 100% { transform: rotate(90deg) translate(0, 0); }
+	25% { transform: rotate(90deg) translate(1px, 0); }
+	50% { transform: rotate(90deg) translate(-1px, 1px); }
+	75% { transform: rotate(90deg) translate(0, -1px); }
+}
+
+legend a.littleshake,
+legend span.littleshake {
+	display: inline-block;
+	line-height: 1;
+	margin-top: -0.5em;
+	margin-bottom: -0.5em;
+	vertical-align: middle;
+}
+
+
+.gallery-exit-layer {
+	position: fixed;
+	z-index: 10001;
+	pointer-events: none;
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: crisp-edges;
+	image-rendering: pixelated;
+}
+
+.gallery-color-alpha {
+	min-width: 7ch;
+}
+
+
+.gallery-color-checker {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.gallery-color-checker > span {
+	width: 33.333333%;
+	height: 33.333333%;
+	background: #666;
+}
+
+.gallery-color-checker > span:nth-child(odd) {
+	background: #222;
+}
+
+/* Keep the viewer controls sharp while their mosaic mask animates. */
+.glyph-gallery .bp-controls {
+	opacity: 1 !important;
+	transition: none;
+}
+
+/* Capture and keep previews at their resting position throughout viewing. */
+.glyph-gallery-opening #glyphs .littleshake,
+.glyph-gallery-opening #blank .littleshake,
+.glyph-gallery-open #glyphs .littleshake,
+.glyph-gallery-open #blank .littleshake {
+	animation: none !important;
+	transform: none !important;
 }
