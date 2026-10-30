@@ -191,7 +191,12 @@ jobs:
           go vet ./...
           name="arcade-font-engine"
           ext=""
-          if [ "${{ matrix.os }}" = "windows" ]; then ext=".exe"; fi
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            ext=".exe"
+            resource="rsrc_windows_${{ matrix.arch }}.syso"
+            trap 'rm -f "$resource"' EXIT
+            CGO_ENABLED=0 go run ./tools/winres ../client/favicon.ico "${{ github.ref_name }}" "${{ matrix.arch }}" "$resource"
+          fi
           CGO_ENABLED=0 GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} \
             go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
             -o ../${name}${ext} .
@@ -207,8 +212,12 @@ jobs:
         if: matrix.os != 'darwin'
         run: |
           binary=arcade-font-engine
-          if [ "${{ matrix.os }}" = "windows" ]; then binary="${binary}.exe"; fi
-          upx --best --lzma "$binary"
+          options=()
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            binary="${binary}.exe"
+            options+=(--compress-icons=0 --compress-resources=0)
+          fi
+          upx --best --lzma "${options[@]}" "$binary"
           upx --test "$binary"
           if [ "${{ matrix.os }}/${{ matrix.arch }}" = "linux/amd64" ]; then
             "./${binary}" --version
