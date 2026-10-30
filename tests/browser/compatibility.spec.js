@@ -74,11 +74,16 @@ test('built page, gallery and menu work with the selected polyfills', async ({ p
         await page.mouse.up();
     }
     await expect.poll(async () => (await page.locator('.bp-img').boundingBox()).x).toBeCloseTo(initial.x + 90, 0);
+    const previousMedia = await page.locator('.bp-img').elementHandle();
     await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(500);
-    const next = await page.locator('.bp-img').boundingBox();
-    expect(next.x).toBeCloseTo(initial.x + 90, 0);
-    expect(next.y).toBeCloseTo(initial.y + 40, 0);
+    // The outgoing image remains mounted during its mosaic outro. Wait for
+    // that specific node to leave, rather than assuming CI finishes in 500ms.
+    await page.waitForFunction(element => !element.isConnected, previousMedia);
+    await previousMedia.dispose();
+    await expect(page.locator('.bp-img')).toHaveCount(1);
+    await page.waitForFunction(() => document.querySelector('.bp-img img')?.naturalWidth > 0);
+    await expect.poll(async () => (await page.locator('.bp-img').boundingBox()).x).toBeCloseTo(initial.x + 90, 0);
+    await expect.poll(async () => (await page.locator('.bp-img').boundingBox()).y).toBeCloseTo(initial.y + 40, 0);
     await expect(page.locator('.gallery-color')).toBeVisible();
     await page.locator('.bp-x').dispatchEvent('click');
     await expect(page.locator('.bp-wrap')).toHaveCount(0);
