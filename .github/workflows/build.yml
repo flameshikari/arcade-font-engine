@@ -196,6 +196,24 @@ jobs:
             go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
             -o ../${name}${ext} .
 
+      - name: Install UPX
+        if: matrix.os != 'darwin'
+        working-directory: server
+        run: |
+          CGO_ENABLED=0 go run ./tools/upx "${{ runner.temp }}/upx/upx"
+          echo "${{ runner.temp }}/upx" >> "$GITHUB_PATH"
+
+      - name: Compress Binary
+        if: matrix.os != 'darwin'
+        run: |
+          binary=arcade-font-engine
+          if [ "${{ matrix.os }}" = "windows" ]; then binary="${binary}.exe"; fi
+          upx --best --lzma "$binary"
+          upx --test "$binary"
+          if [ "${{ matrix.os }}/${{ matrix.arch }}" = "linux/amd64" ]; then
+            "./${binary}" --version
+          fi
+
       - name: Archive Binary
         run: |
           name="arcade-font-engine-${{ matrix.os }}-${{ matrix.arch }}"

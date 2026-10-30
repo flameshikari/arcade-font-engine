@@ -32,17 +32,17 @@
     "not dead"
   ],
   "devDependencies": {
-    "@babel/core": "^7",
-    "@babel/parser": "^7",
-    "@babel/preset-env": "^7",
-    "@babel/traverse": "^7",
+    "@babel/core": "^7.29.7",
+    "@babel/parser": "^7.29.12",
+    "@babel/preset-env": "^7.29.7",
+    "@babel/traverse": "^7.29.12",
     "@chialab/esbuild-plugin-babel": "^0.19.1",
     "@chialab/esbuild-plugin-html": "^0.19.1",
     "@playwright/test": "^1.64.1",
     "bigger-picture": "1.1.20",
-    "browserslist": "^4.29.4",
+    "browserslist": "^4.29.5",
     "browserslist-to-esbuild": "^2.1.1",
-    "caniuse-lite": "^1.0.30001819",
+    "caniuse-lite": "^1.0.30001820",
     "core-js": "^3.51.0",
     "core-js-compat": "^3.51.0",
     "dom4": "^2.1.6",
@@ -54,15 +54,15 @@
     "jquery-ui": "^1.14.2",
     "nodemon": "^3.1.14",
     "pepjs": "^0.5.3",
-    "postcss": "^8.5.31",
-    "postcss-preset-env": "^11.6.1",
+    "postcss": "^8.5.32",
+    "postcss-preset-env": "^11.6.2",
     "rcpy": "^1.0.2",
     "relateurl": "^0.2.7",
     "resize-observer-polyfill": "^1.5.1",
     "srcset": "^5.0.3",
     "terser": "^5.51.2"
   },
-  "version": "1.1.0",
+  "version": "1.2.0",
   "patchedDependencies": {
     "bigger-picture@1.1.20": "patches/bigger-picture@1.1.20.patch"
   }
