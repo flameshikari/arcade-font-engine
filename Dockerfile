@@ -14,7 +14,7 @@ COPY server/tools/upx/ ./tools/upx/
 RUN CGO_ENABLED=0 go run ./tools/upx /usr/local/bin/upx
 COPY server/ .
 COPY --from=frontend /app/public ./public
-RUN go mod verify && go test ./... && CGO_ENABLED=0 go build -ldflags="-s -w -X main.version=1.2.0" -o /arcade-font-engine .
+RUN go mod verify && go test ./... && CGO_ENABLED=0 go build -ldflags="-s -w -X main.version=1.2.1" -o /arcade-font-engine .
 RUN upx --best --lzma /arcade-font-engine && upx --test /arcade-font-engine && /arcade-font-engine --version
 
 FROM dhi.io/alpine-base:3.23@sha256:8a14cb527704fd6325fae6e92e0bc73a3c64b44a83c36a3abb53730c5757cc72
