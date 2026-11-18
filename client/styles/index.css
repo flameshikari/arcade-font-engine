@@ -1,5 +1,5 @@
 @import 'jquery-ui/dist/themes/base/jquery-ui.css';
-@import 'bigger-picture/css';
+@import '@twistedandy/bigger-picture/css';
 @import './reflex.css';
 
 @font-face {
@@ -715,7 +715,7 @@ table td:last-child {
 	transform: none;
 }
 
-.glyph-gallery .bp-cap {
+.glyph-gallery .bp-caption {
 	font: inherit;
 	background: black;
 }
@@ -767,7 +767,7 @@ table td:last-child {
 }
 
 
-.glyph-gallery .bp-cap {
+.glyph-gallery .bp-caption {
 	animation: none;
 	transition: none;
 }
@@ -795,7 +795,7 @@ table td:last-child {
 }
 
 
-.glyph-gallery .bp-zoomed .bp-cap {
+.glyph-gallery .bp-zoomed .bp-caption {
 	opacity: 1;
 }
 
@@ -887,7 +887,7 @@ table td:last-child {
 }
 
 
-.glyph-gallery .bp-cap {
+.glyph-gallery .bp-caption {
 	text-align: center;
 }
 
@@ -961,4 +961,26 @@ legend span.littleshake {
 .glyph-gallery-open #blank .littleshake {
 	animation: none !important;
 	transform: none !important;
+}
+
+/* The gallery uses our mosaic transitions and keeps the source position. */
+.glyph-gallery .bp-wrap {
+	--bp-duration: 330ms;
+	--bp-stage-gap: 0px;
+}
+
+.glyph-gallery .bp-slide,
+.glyph-gallery .bp-controls,
+.glyph-gallery .bp-actions,
+.glyph-gallery .bp-caption {
+	animation: none !important;
+}
+
+.glyph-gallery .bp-img {
+	translate: none;
+}
+
+.glyph-gallery .bp-caption {
+	translate: none;
+	transform: translateX(-50%);
 }

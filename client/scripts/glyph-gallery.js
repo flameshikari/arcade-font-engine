@@ -1,4 +1,4 @@
-import BiggerPicture from 'bigger-picture';
+import BiggerPicture from '@twistedandy/bigger-picture';
 import { render } from './renderer.js';
 import { loadImage } from './compat.js';
 import { mediaMosaic, setSourceVisibility, showSourceImmediately } from './gallery-transition.js';
@@ -84,6 +84,8 @@ export function initGlyphGallery(previews, getOptions, getOutputOptions) {
                 const loaded = await loadImage(src);
                 loadedImages.set(src, loaded);
                 return {
+                    link: src,
+                    type: 'image',
                     img: src,
                     thumb: src,
                     element,
@@ -111,9 +113,7 @@ export function initGlyphGallery(previews, getOptions, getOutputOptions) {
                 position: sources.indexOf(image),
                 clickZoom: 2,
                 maxZoom: 8,
-                zoomDuration: transitionDuration,
-                transitionDuration: 0,
-                intro: 'pixels',
+                zoom: false,
                 freePan: true,
                 captionTransition: captionMosaic,
                 mediaTransition: (node, entering, transferring) => {

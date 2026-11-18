@@ -1,3 +1,5 @@
+import { transitionDuration } from './output-transition.js';
+
 function createColorPanel(container) {
     const panel = document.createElement('div');
     panel.className = 'gallery-color';
@@ -26,6 +28,7 @@ export function createColorPicker(container, loadedImages) {
     let item;
     let pointer;
     let frame;
+    let motionUntil = 0;
     let sampledSource;
     let pixels;
     let lastColor = '';
@@ -50,6 +53,9 @@ export function createColorPicker(container, loadedImages) {
     clear();
     const sample = () => {
         frame = undefined;
+        // Bigger Picture now animates zoom with CSS, so styles change once
+        // while the image keeps moving. Sample its actual bounds each frame.
+        if (pointer && performance.now() < motionUntil) frame = requestAnimationFrame(sample);
         if (!pointer || !item || document.hidden) return clear();
         const hit = document.elementFromPoint(pointer.x, pointer.y);
         const media = hit?.closest('.bp-img');
@@ -86,8 +92,10 @@ export function createColorPicker(container, loadedImages) {
     const leave = () => { pointer = null; clear(); };
     // Watch actual image transforms so the color stays correct during zoom.
     const observer = new MutationObserver(records => {
-        if (pointer && records.some(record => record.type === 'childList' ||
-            record.target.classList?.contains('bp-img'))) queue();
+        const moving = records.some(record => record.type === 'attributes' &&
+            record.target.classList?.contains('bp-img'));
+        if (moving) motionUntil = performance.now() + transitionDuration;
+        if (pointer && (moving || records.some(record => record.type === 'childList'))) queue();
     });
     observer.observe(container, { subtree: true, childList: true, attributes: true, attributeFilter: ['style'] });
     container.addEventListener('mousemove', move);
